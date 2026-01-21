@@ -347,6 +347,69 @@ Every action taken by the Autonomous Engineering OS must satisfy:
 
 ---
 
+## MCP USAGE RULES
+
+### Allowed MCP Servers
+
+All agents are authorized to use the following MCP servers:
+- **filesystem** — Read/write any file on the Mac
+- **fetch** — Fetch web pages, APIs, and documentation
+- **docs** — Inject up-to-date technical documentation into prompts
+
+### Agent Responsibilities
+
+**Agents MUST:**
+- ✅ Use filesystem MCP instead of guessing file contents
+- ✅ Use docs MCP instead of relying on training data
+- ✅ Use fetch MCP to verify external facts and APIs
+- ✅ Verify data authenticity before acting on fetched content
+- ✅ Maintain appropriate isolation between agent contexts
+
+**Agents are NOT allowed to:**
+- ❌ Access credentials, secrets, or private keys via filesystem MCP
+- ❌ Modify files outside the repository unless explicitly approved
+- ❌ Use fetch MCP to circumvent rate limits or terms of service
+- ❌ Cache sensitive data from docs MCP without proper handling
+
+### MCP Safety Guidelines
+
+1. **Filesystem MCP Access**
+   - Limit operations to the repository root: `/Users/ranjansingh/Desktop/autonomous-engineering-os`
+   - Read operations are autonomous
+   - Write operations follow all existing guardrails
+   - Never access system directories like `/etc`, `/var`, `~/.ssh`
+
+2. **Fetch MCP Usage**
+   - Verify URL authenticity before making requests
+   - Respect rate limits and robots.txt
+   - Validate TLS certificates automatically
+   - Cache responses appropriately to reduce unnecessary fetches
+
+3. **Docs MCP Integration**
+   - Use for framework documentation, API references, best practices
+   - Cross-reference with multiple sources for critical decisions
+   - Consider publication dates when using docs
+   - Prefer official documentation over third-party sources
+
+### MCP Error Handling
+
+When an MCP server fails:
+1. Log the failure with context
+2. Attempt fallback (e.g., manual doc lookup for docs MCP)
+3. Notify human if critical for task completion
+4. Never proceed with guessing when MCP data is unavailable
+
+### MCP Server Management
+
+Adding or removing MCP servers requires:
+- Risk assessment of new server
+- Update to this governance document
+- Human approval for production-impacting changes
+- Testing in safe environment before use
+
+---
+
 ## Version History
 
+- v1.1 (MCP Integration): Added MCP Usage Rules for filesystem, fetch, and docs servers
 - v1.0 (Initial): Core guardrails, one-writer rule, approval gates, safe terminal policy
