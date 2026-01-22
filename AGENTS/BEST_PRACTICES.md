@@ -6,6 +6,100 @@ This document defines best practices for how all agents should execute their con
 
 ---
 
+## MANDATORY GOVERNANCE RULES (All Agents MUST Follow)
+
+**CRITICAL**: These governance rules are MANDATORY and take priority over any other best practice. Violations must be escalated immediately.
+
+### 1. Safe Autonomy Mode (MANDATORY DEFAULT)
+
+**From GOVERNANCE/GUARDRAILS.md**: The system MUST operate in Safe Autonomy mode by default. "Allow all commands" or "Auto High" modes are PROHIBITED as default settings.
+
+**Requirements**:
+- Only commands on the approved allowlist execute autonomously
+- All other commands require explicit human approval
+- Risk assessment required for every command before execution
+- Dry-run verification mandatory for file operations
+
+**Reference**: See `GOVERNANCE/GUARDRAILS.md - DEFAULT OPERATION MODE`
+
+---
+
+### 2. Blocked Commands (ABSOLUTE PROHIBITIONS)
+
+**From GOVERNANCE/GUARDRAILS.md**: These commands are NEVER permitted under any circumstances:
+
+**ABSOLUTELY BLOCKED**:
+- `rm -rf` (any form, any context)
+- Any command with `sudo` prefix
+- System package management: `sudo apt`, `sudo yum`, `sudo brew`
+- `docker system prune` (destructive)
+- Any operation accessing secrets/credentials: `cat ~/.env`, `echo $API_KEY`, `chmod 600 ~/.ssh/*`
+- Any file write operation outside repository root
+
+**Reference**: See `GOVERNANCE/GUARDRAILS.md - PROHIBITED COMMAND PATTERNS`
+
+---
+
+### 3. Pre-Execution Cost Estimation (REQUIRED)
+
+**From GOVERNANCE/COST_POLICY.md**: Before executing ANY task, the system MUST provide a pre-execution cost estimate covering both tokens and infrastructure.
+
+**Required Format**:
+```
+Estimated Cost Breakdown:
+• Tokens: ~$X.XX (input: ~50K, output: ~10K)
+• Infrastructure: ~$Y.YY (compute: Xmin, API: Y calls)
+• Total: ~$Z.ZZ
+```
+
+**Thresholds**:
+- <$10: Autonomous (no approval needed)
+- $10-$50: Autonomous with logging
+- $50-$100: Warn before proceeding
+- >$100: Require human approval
+
+**Reference**: See `GOVERNANCE/COST_POLICY.md - Pre-Execution Cost Estimation`
+
+---
+
+### 4. Command Safety Validation (REQUIRED)
+
+**From RUNBOOKS/safe-execution.md**: Follow the mandatory pre-execution checklist before running ANY command.
+
+**Pre-Execution Checklist** (ALL required):
+```
+[ ] 1. Verify command is on approved allowlist OR get human approval
+[ ] 2. Confirm working directory is repository root
+[ ] 3. Check for sensitive data in command (secrets, passwords, keys)
+[ ] 4. Estimate cost and resource impact
+[ ] 5. Consider if operation is reversible
+[ ] 6. Have rollback plan if operation cannot be reversed
+[ ] 7. Quote paths with spaces or special characters
+[ ] 8. Validate command syntax before executing
+```
+
+**Reference**: See `RUNBOOKS/safe-execution.md - PRE-EXECUTION CHECKLIST`
+
+---
+
+### 5. Approval Gates for High-Risk Operations (MANDATORY)
+
+**From GOVERNANCE/GUARDRAILS.md**: The following operations ALWAYS require explicit human approval:
+
+**NEEDS HUMAN APPROVAL**:
+- Any `sudo` command
+- Any `rm -rf`, `rm -r`, or `rmdir` command
+- Any package installation (`npm install -g`, `pip install`, `brew install`)
+- Any `docker system prune`, `docker volume rm`, `docker rmi -f`
+- Any secrets/credentials operations
+- Any file write operation outside repository root
+- Any production deployment
+- Any database migration (DDL statements)
+
+**Reference**: See `GOVERNANCE/GUARDRAILS.md - APPROVAL GATES`
+
+---
+
 ## UNIVERSAL BEST PRACTICES (All Agents)
 
 ### 1. Think Before Acting
