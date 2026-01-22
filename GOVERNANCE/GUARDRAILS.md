@@ -352,23 +352,31 @@ Every action taken by the Autonomous Engineering OS must satisfy:
 ### Allowed MCP Servers
 
 All agents are authorized to use the following MCP servers:
-- **filesystem** — Read/write any file on the Mac
-- **fetch** — Fetch web pages, APIs, and documentation
-- **docs** — Inject up-to-date technical documentation into prompts
+- **filesystem** — Read/write any file on the Mac (scoped to the repository root)
+- **docs** — Inject up-to-date technical documentation into prompts (HTTP-based official MCP server)
+
+### Built-in Tools (Not MCP Servers)
+
+**Factory also provides built-in tools for web content fetching:**
+- **FetchUrl** — Fetch web pages, APIs, and documentation (built-in tool, not an MCP server)
+- **WebSearch** — Search the web for information (built-in tool, not an MCP server)
+
+These built-in tools are used instead of a dedicated fetch MCP server to ensure reliable web content access.
 
 ### Agent Responsibilities
 
 **Agents MUST:**
 - ✅ Use filesystem MCP instead of guessing file contents
 - ✅ Use docs MCP instead of relying on training data
-- ✅ Use fetch MCP to verify external facts and APIs
+- ✅ Use FetchUrl built-in tool to verify external facts and APIs
+- ✅ Use WebSearch built-in tool to search for current information
 - ✅ Verify data authenticity before acting on fetched content
 - ✅ Maintain appropriate isolation between agent contexts
 
 **Agents are NOT allowed to:**
 - ❌ Access credentials, secrets, or private keys via filesystem MCP
 - ❌ Modify files outside the repository unless explicitly approved
-- ❌ Use fetch MCP to circumvent rate limits or terms of service
+- ❌ Use fetch tools to circumvent rate limits or terms of service
 - ❌ Cache sensitive data from docs MCP without proper handling
 
 ### MCP Safety Guidelines
@@ -379,25 +387,28 @@ All agents are authorized to use the following MCP servers:
    - Write operations follow all existing guardrails
    - Never access system directories like `/etc`, `/var`, `~/.ssh`
 
-2. **Fetch MCP Usage**
+2. **Docs MCP Integration**
+   - Use for framework documentation, API references, best practices
+   - Cross-reference with multiple sources for critical decisions
+   - Consider publication dates when using docs
+   - Prefer official documentation over third-party sources
+   - Server runs over HTTP at `https://modelcontextprotocol.io/mcp`
+
+3. **Built-in FetchUrl Tool Usage**
    - Verify URL authenticity before making requests
    - Respect rate limits and robots.txt
    - Validate TLS certificates automatically
    - Cache responses appropriately to reduce unnecessary fetches
 
-3. **Docs MCP Integration**
-   - Use for framework documentation, API references, best practices
-   - Cross-reference with multiple sources for critical decisions
-   - Consider publication dates when using docs
-   - Prefer official documentation over third-party sources
-
 ### MCP Error Handling
 
 When an MCP server fails:
 1. Log the failure with context
-2. Attempt fallback (e.g., manual doc lookup for docs MCP)
+2. Attempt fallback for docs MCP: use WebSearch or FetchUrl built-in tool
 3. Notify human if critical for task completion
 4. Never proceed with guessing when MCP data is unavailable
+
+Note: FetchUrl and WebSearch are Factory built-in tools, not MCP servers. They should always be available as fallback options.
 
 ### MCP Server Management
 
