@@ -18,7 +18,52 @@ This document defines the cost management policy for the Autonomous Engineering 
 
 ## COST THRESHOLDS
 
-### Per-Task Thresholds
+### Pre-Execution Cost Estimation (REQUIRED)
+
+**MANDATORY**: Before executing any task, the system MUST provide a pre-execution cost estimate covering:
+
+1. **Token Costs**:
+   - Input tokens estimated: [X]
+   - Output tokens estimated: [Y]
+   - Model usage: [model name, e.g., gpt-4o]
+   - Estimated token cost: $[amount]
+
+2. **Infrastructure Costs**:
+   - Compute time estimated: [X minutes]
+   - API calls estimated: [Y calls]
+   - External service costs: $[amount]
+   - CI/CD minutes estimated: [Z minutes]
+   - Estimated infra cost: $[format_amount]
+
+3. **Total Estimated Cost**: $[total_amount]
+
+**Cost Estimate Format** (to be presented before execution):
+```
+Estimated Cost Breakdown:
+• Tokens: ~$X.XX (input: ~50K, output: ~10K)
+• Infrastructure: ~$Y.YY (compute: Xmin, API: Y calls)
+• Total: ~$Z.ZZ
+```
+
+### Per-Task Token Thresholds
+
+| Threshold | Token Range | Cost | Action Required |
+|-----------|-------------|------|-----------------|
+| Low | 0 - 100K tokens | $0 - $5 | None (autonomous) |
+| Medium | 100K - 500K tokens | $5 - $25 | None (autonomous) |
+| High | 500K - 1M tokens | $25 - $50 | Warn and present options |
+| Critical | > 1M tokens | > $50 | Require human approval |
+
+### Per-Task Infrastructure Thresholds
+
+| Threshold | Cost | Action Required |
+|-----------|------|-----------------|
+| Low | $0 - $5 | None (autonomous) |
+| Medium | $5 - $20 | None (autonomous) |
+| High | $20 - $50 | Warn and present options |
+| Critical | > $50 | Require human approval |
+
+### Combined Per-Task Thresholds
 
 | Threshold | Amount | Action Required |
 |-----------|--------|-----------------|
@@ -27,7 +72,23 @@ This document defines the cost management policy for the Autonomous Engineering 
 | High | $50 - $100 | Warn and present options |
 | Critical | $100+ | Require human approval |
 
-### Cumulative Thresholds
+### Cumulative Token Thresholds
+
+| Time Period | Warning Threshold | Stop Threshold |
+|-------------|-------------------|----------------|
+| Daily | 10M tokens (~$50) | 20M tokens (~$100) |
+| Weekly | 50M tokens (~$250) | 100M tokens (~$500) |
+| Monthly | 200M tokens (~$1000) | 500M tokens (~$2500) |
+
+### Cumulative Infrastructure Thresholds
+
+| Time Period | Warning Threshold | Stop Threshold |
+|-------------|-------------------|----------------|
+| Daily | $150 | $300 |
+| Weekly | $750 | $1500 |
+| Monthly | $3000 | $5000 |
+
+### Cumulative Combined Thresholds
 
 | Time Period | Warning Threshold | Stop Threshold |
 |-------------|-------------------|----------------|
