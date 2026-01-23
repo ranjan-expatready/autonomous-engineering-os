@@ -68,13 +68,33 @@ jobs:
       # - name: Install dependencies
       #   run: |
       #     pip install -r requirements.txt
-      #     pip install pytest pytest-cov
+      #     pip install pytest pytest-cov coverage[toml]
 
       # - name: Run unit tests with coverage
       #   run: |
       #     pytest tests/unit/ --cov=app --cov-report=xml --cov-report=term
-      #     # Coverage threshold: 80% minimum
-      #     coverage report --fail-under=80
+      #     # Coverage threshold: 70% (Stage 1) - see GOVERNANCE/QUALITY_GATES.md
+      #     coverage report --fail-under=70
+
+      # Coverage Reporting Placeholder (see GOVERNANCE/QUALITY_GATES.md for Staged Coverage Policy)
+      - name: Coverage Reporting Placeholder
+        run: |
+          echo "=============================================="
+          echo "Coverage Reporting - Staged Quality Gates"
+          echo "=============================================="
+          echo ""
+          echo "Current Stage: Stage 0 (Tests required for new features)"
+          echo "Coverage Requirement: None (CI green sufficient)"
+          echo "Next Stage: Stage 1 (70% coverage floor)"
+          echo ""
+          echo "To enable coverage reporting:"
+          echo "1. Install coverage tools (pytest-cov for Python, jest for JavaScript, etc.)"
+          echo "2. Uncomment coverage test step above"
+          echo "3. Set coverage threshold (70% for Stage 1, 80% for Stage 2)"
+          echo "4. Upload coverage to Codecov or similar service"
+          echo ""
+          echo "See GOVERNANCE/QUALITY_GATES.md for complete staged coverage policy"
+          echo "=============================================="
 
       # Placeholder for framework initialization
       - name: Placeholder (No tests yet)
@@ -88,6 +108,7 @@ jobs:
       #     file: ./coverage.xml
       #     flags: unittests
       #     name: codecov-umbrella
+      #     fail_ci_if_error: false  # Don't fail CI if upload fails
 
   # ========================
   # INTEGRATION TESTS
