@@ -702,6 +702,200 @@ After prompt output, validate:
 
 ---
 
+## RESUME TEMPLATE
+
+### Use Case
+
+**When**: The human wants to resume autonomous work after interruption (reboot, manual pause, system crash, etc.)
+
+**Purpose**: Trigger the resume protocol to reconstruct state and continue work deterministically.
+
+### RESUME Template
+
+```
+Factory, please resume autonomous work.
+
+Reconstruct:
+1. Current governance state (all guardrails, risk tiers, quality gates)
+2. Current system state (last known state, active tasks, blockers)
+3. GitHub repository state (issues, PRs, CI status)
+4. Determine next priority action
+5. Reconstruct all context needed to continue
+6. Begin executing
+
+Resume from: [IDLE / PLANNING / EXECUTING / WAITING_FOR_HUMAN]
+```
+
+### How to Use
+
+1. Replace `[IDLE / PLANNING / EXECUTING / WAITING_FOR_HUMAN]` with the last known state (optional, otherwise auto-detect)
+2. Paste the entire template to Factory
+3. Factory will execute the resume protocol (RUNBOOKS/resume-protocol.md)
+4. Factory will reconstruct state from REPOSITORY + GITHUB + CI
+5. Factory will begin executing next priority action
+
+### Expected Output
+
+Factory should provide:
+- Current governance state summary
+- Current system state summary
+- GitHub state summary
+- Next priority action identified
+- Context reconstruction status
+- Execution started (if valid state found) OR request for clarification (if state ambiguous)
+
+### Resume Success Criteria
+
+Factory successfully resumes when:
+- [ ] All governance doctrine read and understood
+- [ ] Current state (STATUS_LEDGER, LAST_KNOWN_STATE) read and validated
+- [ ] GitHub state scanned and verified
+- [ ] CI status checked and validated
+- [ ] Next priority action determined
+- [ ] No blockers preventing execution
+- [ ] Context fully reconstructed
+- [ ] Correct state machine position assumed
+- [ ] First action successfully started
+
+### Resume Failure Handling
+
+If resume fails (state cannot be reconstructed):
+- Factory will report specific failure reason
+- Factory will request manual state update from human
+- Human can manually update STATE/STATUS_LEDGER.md and STATE/LAST_KNOWN_STATE.md
+- Human can retry resume after manual update
+
+---
+
+## STATUS TEMPLATE
+
+### Use Case
+
+**When**: The human wants a plain-English status report on the current state of the system.
+
+**Purpose**: Understand what's being worked on, what's blocked, what needs approval, and overall progress.
+
+### STATUS Template
+
+```
+Factory, please provide a status report.
+
+Report on:
+1. Current objective and progress
+2. Active issues and PRs
+3. Current blockers
+4. Next actions (ordered by priority)
+5. What needs human approval (if anything)
+```
+
+### How to Use
+
+1. Paste the entire template to Factory
+2. Factory will read STATE/STATUS_LEDGER.md and STATE/LAST_KNOWN_STATE.md
+3. Factory will scan GitHub for current state
+4. Factory will compile a plain-English status report
+
+### Expected Output
+
+Factory should provide a concise report covering:
+
+**1. Current Objective and Progress**
+- What is the current sprint goal?
+- What tasks are in progress?
+- What is the progress percentage?
+- What milestones have been reached?
+
+**2. Active Issues and PRs**
+- List of open issues (with links)
+- List of open PRs (with links and CI status)
+- Prioritization of issues/PRs
+
+**3. Current Blockers**
+- List of active blockers
+- What's blocking what?
+- Severity and impact of each blocker
+- Expected resolution timeline
+
+**4. Next Actions**
+- Ordered list of next actions (highest priority first)
+- For each action: owner, priority, estimated time, dependencies
+
+**5. What Needs Human Approval**
+- List of items awaiting human approval
+- Why approval is needed
+- Risk tier of each item
+- Approvals pending
+
+### Format Requirements
+
+**Plain English**: Report should be readable and understandable without technical jargon.
+
+**Concise**: Summary should fit in 4-8 paragraphs, bullet points for lists.
+
+**Actionable**: Report should clearly indicate what needs to happen next.
+
+**Links**: Include GitHub links to relevant issues and PRs.
+
+### Status Report Example
+
+```
+== CURRENT OBJECTIVE AND PROGRESS ==
+
+We're currently working on: [Objective]
+
+Progress: [X%] complete
+Milestones reached: [Milestone 1, Milestone 2]
+Next milestone: [Milestone 3]
+
+== ACTIVE ISSUES AND PRs ==
+
+Open Issues (3):
+- #123: [Title] - [Priority] - [Link]
+- #124: [Title] - [Priority] - [Link]
+- #125: [Title] - [Priority] - [Link]
+
+Open PRs (2):
+- PR #42: [Title] - [CI Status] - [Target Branch] - [Link]
+- PR #43: [Title] - [CI Status] - [Target Branch] - [Link]
+
+== CURRENT BLOCKERS ==
+
+1. [Blocker 1] - [Severity]
+   Impact: [Description]
+   Expected resolution: [Timeline]
+
+2. [Blocker 2] - [Severity]
+   Impact: [Description]
+   Expected resolution: [Timeline]
+
+== NEXT ACTIONS ==
+
+1. [Action #1] - [HIGHEST]
+   Owner: [Agent]
+   Estimated time: [X min/hr/day]
+   Dependencies: [List]
+
+2. [Action #2] - [HIGH]
+   Owner: [Agent]
+   Estimated time: [X min/hr/day]
+   Dependencies: [List]
+
+== NEEDS HUMAN APPROVAL ==
+
+1. [Item #1]
+   Why: [Reason]
+   Risk Tier: [T1/T2/T3]
+   Waiting since: [Date]
+
+2. [Item #2]
+   Why: [Reason]
+   Risk Tier: [T1/T2/T3]
+   Waiting since: [Date]
+```
+
+---
+
 ## VERSION HISTORY
 
+- v1.1 (Resume/Status): Added RESUME and STATUS templates for state machine support
 - v1.0 (Initial): Templates for Feature, Bug Fix, Refactor, Incident, Deployment, Advisory, Release, Cost Assessment

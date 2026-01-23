@@ -442,6 +442,164 @@ Before acting on documentation:
 
 ---
 
+## STATE MANAGEMENT POLICY
+
+### Overview
+
+The Autonomous Engineering OS maintains determinism through state tracking in the STATE/ directory. All state changes are tracked in STATUS_LEDGER.md and LAST_KNOWN_STATE.md to enable deterministic resume after interruption.
+
+### State Files
+
+**STATE/STATUS_LEDGER.md**:
+- Human-readable ledger of current system state
+- Tracks: objectives, issues, PRs, artifacts, blockers, next actions, risk tier, gates
+- Updated continuously during operations
+- Read during resume protocol to understand current state
+
+**STATE/LAST_KNOWN_STATE.md**:
+- Concise snapshot at meaningful milestones
+- Captured after: planning completed, PR opened, CI passed, deploy ready, etc.
+- Provides deterministic resume point after interruption
+- Updated after every state machine transition
+
+### PR State Update Requirements
+
+**MANDATORY**: Every pull request MUST update STATE/STATUS_LEDGER.md and STATE/LAST_KNOWN_STATE.md.
+
+**When to Update STATE Files**:
+
+**Within the PR** (Preferred):
+- Include STATE/STATUS_LEDGER.md update in the PR itself
+- Include STATE/LAST_KNOWN_STATE.md update in the PR itself
+- Document state changes in commit messages
+- Reviewers must verify STATE files are updated
+
+**Immediately After Merge** (If not in PR):
+- If PR does not include STATE file updates, update immediately after merge
+- Commit: "chore: update STATE ledger and last known state"
+- Push to main (no PR required for STATE updates only)
+- Verify updates reflect merged changes
+
+**Which PRs Must Update STATE**:
+
+**ALL PRs must update STATE files**, including:
+- Application code changes (APP/**)
+- Product specification changes (PRODUCT/**)
+- Backlog updates (BACKLOG/**)
+- Governance changes (GOVERNANCE/**)
+- Agent changes (AGENTS/**)
+- Workflow changes (.github/workflows/**)
+- Documentation changes (any directory)
+- Infrastructure changes
+- ANY change to the repository
+
+**Exceptions**: None. All PRs must update state.
+
+### STATE Update Checklist
+
+Before merging a PR, the PR MUST include updates to:
+
+**STATE/STATUS_LEDGER.md**:
+- [ ] Current objective updated (if changed)
+- [ ] Active issues updated (new issues added/closed)
+- [ ] Active PRs updated (PR opened/closed/merged)
+- [ ] Last completed artifact updated (if any artifact delivered)
+- [ ] Current blockers updated (new blockers added/resolved)
+- [ ] Next actions updated (prioritized list)
+- [ ] Current risk tier updated (if changed)
+- [ ] Required gates status updated (if gates cleared/new gates)
+
+**STATE/LAST_KNOWN_STATE.md**:
+- [ ] State machine position updated (IDLE/PLANNING/EXECUTING/WAITING_FOR_HUMAN)
+- [ ] Active task updated (if changed)
+- [ ] Work-in-progress items updated (if changed)
+- [ ] GitHub state updated (branch, commits, issues, PRs)
+- [ ] CI/CD state updated (if CI run completed)
+- [ ] Risk assessment updated (if changed)
+- [ ] Quality state updated (if tests/coverage changed)
+- [ ] Governance compliance updated (if guardrails changed)
+- [ ] Agent coordination updated (if handoffs)
+- [ ] Blockers updated (added/resolved)
+- [ ] Next actions updated (ordered list)
+- [ ] Context preservation updated (if important context changed)
+- [ ] Validation checks completed
+
+### PR Templates with STATE Updates
+
+When creating a PR, the PR description MUST include a section:
+
+```markdown
+## STATE Updates
+
+### STATUS_LEDGER.md Updates
+- Current objective: [Updated/Unchanged]
+- Active issues: [Added/Closed X issues]
+- Active PRs: [Added/Closed X PRs]
+- Last completed artifact: [New artifact / Unchanged]
+- Current blockers: [Added/Resolved X blockers]
+- Next actions: [Updated priority list]
+
+### LAST_KNOWN_STATE.md Updates
+- State machine position: [IDLE/PLANNING/EXECUTING/WAITING_FOR_HUMAN]
+- Active task: [Updated to: / Unchanged]
+- GitHub state: [Branch updated / PRs updated / Unchanged]
+- CI/CD state: [CI results updated / Unchanged]
+- Risk tier: [Updated to: / Unchanged]
+- Quality state: [Coverage: X% updated / Tests updated / Unchanged]
+```
+
+### Reviewer Responsibility When Reviewing PRs
+
+**Checklist for PR Reviewers**:
+```bash
+[ ] STATE/STATUS_LEDGER.md included in PR (or will be updated immediately after merge)
+[ ] STATE/LAST_KNOWN_STATE.md included in PR (or will be updated immediately after merge)
+[ ] Current objective correctly reflects PR changes
+[ ] Active issues list is accurate
+[ ] Active PRs list is accurate
+[ ] Last completed artifact documented (if PR delivers artifact)
+[ ] Current blockers documented (if any)
+[ ] Next actions prioritized correctly
+[ ] Risk tier assessment is correct
+[ ] Required gates status is accurate
+
+If STATE files are NOT in PR:
+[ ] Confirm PR description states "STATE files will be updated immediately after merge"
+[ ] Verify commit message includes STATE update
+[ ] Reviewer should merge with expectation of STATE update
+```
+
+### STATE File Validation
+
+**Pre-Merge Checks** (automated or manual):
+
+1. Check existence:
+   - STATE/STATUS_LEDGER.md must exist
+   - STATE/LAST_KNOWN_STATE.md must exist
+
+2. Check content:
+   - STATUS_LEDGER.md should not be empty template
+   - LAST_KNOWN_STATE.md should have current state populated
+   - No placeholder values (e.g., "[CURRENT OBJECTIVE]" should be filled)
+
+3. Check consistency:
+   - STATUS_LEDGER and LAST_KNOWN_STATE should be consistent
+   - GitHub state should match STATE files
+   - CI status should match STATE files
+
+4. Check completeness:
+   - All required fields filled
+   - No sections skipped (unless N/A)
+   - Timestamps populated
+   - Links valid
+
+**State File Validation Failure**:
+- If STATE files not updated: BLOCK PR and require update
+- If STATE files have placeholder values: BLOCK PR and require fix
+- If STATE files are inconsistent: BLOCK PR and require fix
+
+---
+
 ## MAIN BRANCH PROTECTION POLICY
 
 ### Overview
@@ -824,6 +982,7 @@ Every action taken by the Autonomous Engineering OS must satisfy:
 6. ✅ Rollback plan exists for irreversible actions
 7. ✅ Human approval obtained for Tier 1 gates
 8. ✅ Main branch protection policy followed (PR-only workflow)
+9. ✅ STATE files updated for every PR (STATUS_LEDGER.md + LAST_KNOWN_STATE.md)
 
 ---
 
