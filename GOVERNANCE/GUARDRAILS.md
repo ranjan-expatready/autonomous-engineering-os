@@ -4,6 +4,37 @@
 
 This document defines the guardrails that keep the Autonomous Engineering OS operating safely, efficiently, and within its intended scope. Guardrails are not limitations — they are accelerators that enable autonomous operation by defining clear boundaries.
 
+## DEFAULT OPERATION MODE
+
+### Safe Autonomy Mode (MANDATORY DEFAULT)
+
+**CRITICAL RULE": The Autonomous Engineering OS MUST operate in "Safe Autonomy Mode" by default. "Allow all commands" or "Auto High" modes are PROHIBITED as default settings.**
+
+### Default Configuration
+
+**Operation Mode**: Safe Autonomy (Allowlist-based Execution)
+- Only commands on the approved allowlist execute autonomously
+- All other commands require explicit human approval
+- Risk assessment required for every command before execution
+- Dry-run verification mandatory for file operations
+
+**Risk Level**: Low/Medium (autonomous), High (requires approval)
+- LOW RISK: Informational commands (read-only, no side effects) — autonomous
+- MEDIUM RISK: Non-destructive operations within repo root — autonomous with logging
+- HIGH RISK: Any destructive operation, system modifications, or file changes outside repo — requires human approval
+
+### Override Mechanism
+
+Human can temporarily elevate authorization with explicit consent:
+```
+"Factory, I authorize elevated execution for task [X]. Proceed with caution."
+```
+
+Elevated mode:
+- Lasts for single task only
+- Resets to Safe Autonomy after task completion
+- Requires explicit re-authorization for subsequent tasks
+
 ---
 
 ## ONE-WRITER RULE (Critical)
@@ -240,6 +271,74 @@ git clean -f (without -n dry-run first)
 
 ### Permitted with Approval
 
+**REQUIRE HUMAN APPROVAL BEFORE EXECUTION (ALL CATEGORIES):**
+
+#### System Commands (NEVER Autonomous)
+```bash
+sudo                    # ANY command with sudo prefix
+sudo rm                 # Absolutely blocked
+sudo chmod, sudo chown  # Permission changes
+sudo apt, sudo yum, sudo brew # System package management
+sudo service, sudo systemctl # Service management
+sudo iptables, sudo firewall-cmd # Firewall changes
+```
+
+#### Destructive Operations (NEVER Autonomous)
+```bash
+rm -rf                  # Absolutely blocked under all circumstances
+rm -r                   # Requires approval, must show affected files first
+rmdir                   # Requires approval
+mkfs, dd, shred        # High risk filesystem operations
+```
+
+#### Package Management (NEVER Autonomous)
+```bash
+npm install -g          # Global package installation
+pip install --user      # User-level installation outside repo
+brew install            # macOS system package management
+apt-get install         # Linux system package management
+docker pull <image>     # Requires approval due to bandwidth and security
+```
+
+#### Docker Operations (NEVER Autonomous)
+```bash
+docker system prune     # Removes all unused data - destructive
+docker volume rm        # Requires approval
+docker network rm       # Requires approval
+docker rmi -f           # Force remove images - blocked
+docker-compose down -v  # Removes volumes - blocked
+```
+
+#### Secrets and Credentials (NEVER Autonomous)
+```bash
+# ANY operation that accesses or modifies secrets/credentials:
+# Example commands that must be approved:
+echo $API_KEY
+cat ~/.env
+chmod 600 ~/.ssh/id_rsa
+ssh-keygen
+openssl genrsa
+# Reading or writing to: ~/.ssh, ~/.aws, ~/.config/*, ~/.credentials/*
+# Any environment file operations outside repo root:
+cat /etc/environment
+echo export KEY > ~/.bashrc
+```
+
+#### Filesystem Writes Outside Repository Root (NEVER Autonomous)
+```bash
+# Writing outside the repo root requires approval:
+# Repo root: /Users/ranjansingh/Desktop/autonomous-engineering-os/
+# Blocked unless explicitly approved:
+touch /tmp/file.txt
+echo "content" > ~/config.json
+cp file ~/Documents/
+mkdir /var/log/app
+kubectl apply -f ~/k8s/
+terraform apply (state files outside repo)
+```
+
+### Permitted with Approval Examples (Additional Context)
+
 **Require Human Approval Before Execution:**
 ```bash
 # Database operations
@@ -247,14 +346,13 @@ psql -d production -c "..."
 # Production config changes
 kubectl apply -f production/
 terraform apply -var-file=production.tfvars
-# Large scale deletes
+# Large scale deletes (within repo root)
 rm large-directory/ (present plan and count first)
-# System-wide changes
-npm install -g <package>
-docker system prune
 # Container operations (production)
 docker stop <production-container>
 kubectl delete deployment/<name>
+# Any operation with production credentials
+# Any file write operation outside repository root
 ```
 
 ### Command Execution Flow
@@ -682,7 +780,81 @@ Every action taken by the Autonomous Engineering OS must satisfy:
 
 ---
 
+## MCP USAGE RULES
+
+### Allowed MCP Servers
+
+All agents are authorized to use the following MCP servers:
+- **filesystem** — Read/write any file on the Mac (scoped to the repository root)
+- **docs** — Inject up-to-date technical documentation into prompts (HTTP-based official MCP server)
+
+### Built-in Tools (Not MCP Servers)
+
+**Factory also provides built-in tools for web content fetching:**
+- **FetchUrl** — Fetch web pages, APIs, and documentation (built-in tool, not an MCP server)
+- **WebSearch** — Search the web for information (built-in tool, not an MCP server)
+
+These built-in tools are used instead of a dedicated fetch MCP server to ensure reliable web content access.
+
+### Agent Responsibilities
+
+**Agents MUST:**
+- ✅ Use filesystem MCP instead of guessing file contents
+- ✅ Use docs MCP instead of relying on training data
+- ✅ Use FetchUrl built-in tool to verify external facts and APIs
+- ✅ Use WebSearch built-in tool to search for current information
+- ✅ Verify data authenticity before acting on fetched content
+- ✅ Maintain appropriate isolation between agent contexts
+
+**Agents are NOT allowed to:**
+- ❌ Access credentials, secrets, or private keys via filesystem MCP
+- ❌ Modify files outside the repository unless explicitly approved
+- ❌ Use fetch tools to circumvent rate limits or terms of service
+- ❌ Cache sensitive data from docs MCP without proper handling
+
+### MCP Safety Guidelines
+
+1. **Filesystem MCP Access**
+   - Limit operations to the repository root: `/Users/ranjansingh/Desktop/autonomous-engineering-os`
+   - Read operations are autonomous
+   - Write operations follow all existing guardrails
+   - Never access system directories like `/etc`, `/var`, `~/.ssh`
+
+2. **Docs MCP Integration**
+   - Use for framework documentation, API references, best practices
+   - Cross-reference with multiple sources for critical decisions
+   - Consider publication dates when using docs
+   - Prefer official documentation over third-party sources
+   - Server runs over HTTP at `https://modelcontextprotocol.io/mcp`
+
+3. **Built-in FetchUrl Tool Usage**
+   - Verify URL authenticity before making requests
+   - Respect rate limits and robots.txt
+   - Validate TLS certificates automatically
+   - Cache responses appropriately to reduce unnecessary fetches
+
+### MCP Error Handling
+
+When an MCP server fails:
+1. Log the failure with context
+2. Attempt fallback for docs MCP: use WebSearch or FetchUrl built-in tool
+3. Notify human if critical for task completion
+4. Never proceed with guessing when MCP data is unavailable
+
+Note: FetchUrl and WebSearch are Factory built-in tools, not MCP servers. They should always be available as fallback options.
+
+### MCP Server Management
+
+Adding or removing MCP servers requires:
+- Risk assessment of new server
+- Update to this governance document
+- Human approval for production-impacting changes
+- Testing in safe environment before use
+
+---
+
 ## Version History
 
-- v1.1 (Branch Protection): Added Main Branch Protection Policy and PR-only enforcement
+- v1.2 (Branch Protection): Added Main Branch Protection Policy and PR-only enforcement
+- v1.1 (MCP Integration): Added MCP Usage Rules for filesystem, fetch, and docs servers
 - v1.0 (Initial): Core guardrails, one-writer rule, approval gates, safe terminal policy
