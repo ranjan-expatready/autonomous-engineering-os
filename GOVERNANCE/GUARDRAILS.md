@@ -333,6 +333,340 @@ Guardrails should be reviewed:
 
 ---
 
+## DOCUMENTATION SOURCES POLICY
+
+### Overview
+
+This section defines how agents should use different documentation sources to ensure accurate, up-to-date, and reliable information when working with frameworks, libraries, and APIs.
+
+### Documentation Sources
+
+**1. Repo Doctrine (project-specific knowledge)**
+- Location: `FRAMEWORK_KNOWLEDGE/` directory, inline code comments, README files
+- When to use: For project-specific patterns, decisions, architecture, and conventions
+- Priority: **HIGHEST** - Always check repo doctrine first before external sources
+
+**2. docs (Official MCP Documentation Server)**
+- Type: HTTP-based MCP server
+- URL: `https://modelcontextprotocol.io/mcp`
+- When to use: For official Model Context Protocol documentation and reference
+- Priority: HIGH - Use as primary source for MCP protocol specifics
+
+**3. docs_arabold (Arabold Docs MCP Server)**
+- Type: Stdio-based MCP server with local indexing
+- Capabilities: Index and search documentation from libraries, frameworks, and APIs
+- When to use: For technical documentation of third-party libraries, frameworks, APIs
+- Features: Supports versioned documentation, semantic search, local caching
+- Priority: HIGH - Use for versioned APIs, framework documentation, and technical facts
+
+**4. context7 (Remote Context Provider)**
+- Type: HTTP-based MCP server
+- URL: `https://mcp.context7.com/mcp`
+- When to use: For general context and knowledge retrieval when local sources are insufficient
+- Priority: MEDIUM - Use as fallback when other sources lack specific information
+
+**5. Built-in Tools (Factory Native)**
+- **FetchUrl**: Built-in tool for fetching web pages, APIs, and documentation
+- **WebSearch**: Built-in tool for searching the web for current information
+- When to use: For recent news, current events, or when other documentation sources are unavailable
+- Priority: LOW - Use only as last resort or for time-sensitive information
+
+### Priority Order
+
+**Documentation Source Hierarchy** (from highest to lowest priority):
+
+1. **Repo Doctrine** → Project-specific knowledge (FRAMEWORK_KNOWLEDGE/)
+2. **docs MCP** → Official MCP protocol documentation
+3. **docs_arabold MCP** → Indexed library/framework documentation
+4. **context7 MCP** → Remote context knowledge
+5. **Built-in Tools (WebSearch/FetchUrl)** → Web search and page fetching
+
+### Decision Matrix
+
+| Question | Recommended Source |
+|----------|-------------------|
+| How does this project pattern work? | Repo Doctrine (FRAMEWORK_KNOWLEDGE/) |
+| What is the MCP tool format? | docs MCP (official server) |
+| What is the React useEffect API signature? | docs_arabold MCP (versioned docs) |
+| How do I implement JWT authentication? | docs_arabold MCP (auth library docs) |
+| What's the industry standard for X? | context7 MCP or WebSearch |
+| What are recent updates to framework Y? | WebSearch (current information) |
+
+### Usage Guidelines
+
+**Mandatory Requirements**:
+1. **Always check repo doctrine first** for project-specific patterns and decisions
+2. **Use docs_arabold for versioned APIs** - do not rely on memory for API signatures that change
+3. **Prefer docs_arabold over WebSearch** for established frameworks and libraries
+4. **Validate documentation publication dates** when using docs_arabold for critical decisions
+5. **Document the source** when referencing external documentation in code or decisions
+
+**When to Use Each Source**:
+
+**Repo Doctrine**:
+- Project architecture decisions
+- Code patterns and conventions
+- Framework choices and rationale
+- Team best practices
+
+**docs MCP**:
+- Official MCP protocol tool formats
+- MCP server implementation guidelines
+- Factory-specific MCP capabilities
+
+**docs_arabold MCP**:
+- Framework API documentation (React, Vue, Django, etc.)
+- Library reference documentation
+- Version-specific API changes
+- Technical implementation details
+
+**context7 MCP**:
+- General knowledge queries
+- Industry best practices
+- Coding patterns when local docs are insufficient
+
+**WebSearch/FetchUrl**:
+- Recent news and announcements
+- Current API pricing or policies
+- Very new libraries not yet indexed
+- Finding additional sources for complex problems
+
+### Documentation Verification
+
+Before acting on documentation:
+1. **Check publication date** - Prefer recent documentation
+2. **Verify version compatibility** - Ensure docs match library version in use
+3. **Cross-reference multiple sources** - For critical decisions
+4. **Check for deprecation warnings** - Ensure APIs are not deprecated
+5. **Test in safe environment** - Before applying to production code
+
+---
+
+## MAIN BRANCH PROTECTION POLICY
+
+### Overview
+
+This section defines the mandatory branch protection rules for the `main` branch. These rules enforce PR-only governance, ensuring all changes go through proper review and validation before merging to main.
+
+### Core Principle
+
+**DIRECT PUSHES TO MAIN ARE FORBIDDEN.**
+
+All changes to the `main` branch MUST occur through pull requests with required reviews and checks.
+
+### Required Branch Protection Settings
+
+The following settings MUST be configured on the `main` branch in GitHub:
+
+#### 1. Require Pull Request Before Merging
+**Setting**: Enable "Require a pull request before merging"
+
+**Requirements**:
+- Require at least 1 approving review before merging
+- Dismiss stale PR approvals when new commits are pushed
+- Require approval from a human reviewer (not automated)
+- Require review from CODEOWNERS when defined
+
+#### 2. Require Status Checks to Pass Before Merging
+**Setting**: Enable "Require status checks to pass before merging"
+
+**Required Checks** (from `.github/workflows/ci.yml`):
+- `lint` - Linting and Formatting checks
+- `test-unit` - Unit Tests
+- `test-integration` - Integration Tests
+- `security` - Security Checks
+- `build` - Build Verification
+- `summary` - CI Summary
+
+**Additional Settings**:
+- Require branches to be up to date before merging
+- Require approval from all code owners when available
+
+#### 3. Disallow Force Pushes to Main
+**Setting**: Enable "Do not allow bypassing the above settings"
+
+**Impact**:
+- `git push --force` to main is blocked
+- `git push -f main` is blocked
+- History rewriting on main is impossible
+- Ensures audit trail is preserved
+
+#### 4. Disallow Deletion of Main
+**Setting**: Enable "Restrict deletions"
+
+**Impact**:
+- Branch cannot be deleted via GitHub UI
+- `git push origin --delete main` is blocked
+- Prevents accidental or malicious branch removal
+
+### Review Requirements by Directory
+
+Different directories require different levels of approval:
+
+#### High-Risk Directories (Require Human Approval - 1 reviewer minimum)
+
+Changes to the following directories **MUST** receive at least 1 human approval:
+
+```
+GOVERNANCE/           # Governance policies (guardrails, cost policy, risk tiers)
+AGENTS/               # Agent contracts, roles, best practices, prompt templates
+.github/workflows/    # CI/CD workflows and automation
+```
+
+**Rationale**: These directories define the operating rules, agent behaviors, and automated processes. Changes here can fundamentally alter how the Autonomous Engineering OS operates.
+
+#### Medium-Risk Directories (Automated Review or 1 reviewer)
+
+Changes to these directories may proceed with automated checks or require 1 reviewer:
+
+```
+FRAMEWORK_KNOWLEDGE/  # Technical knowledge base
+ARCHITECTURE/         # System architecture documentation
+PRODUCT/              # Product specifications and requirements
+RUNBOOKS/             # Operational procedures
+```
+
+**Rationale**: These directories contain knowledge and documentation but have less operational impact than governance files.
+
+#### Low-Risk Directories (Automated Review Only)
+
+Changes in these directories require only CI checks to pass:
+
+```
+APP/                  # Application code (when populated)
+COMPLETION_STATUS.md  # Project progress tracking
+INITIALIZATION_SUMMARY.md  # Project initialization records
+README.md             # Project documentation
+```
+
+**Rationale**: Application code follows standard software engineering practices with automated testing and quality gates.
+
+### Enforced Workflow
+
+The REQUIRED workflow for changes to main:
+
+```
+Step 1: Create Feature Branch
+   git checkout -b feature/your-feature-name
+
+Step 2: Make and Commit Changes
+   git add .
+   git commit -m "descriptive commit message"
+   git push -u origin feature/your-feature-name
+
+Step 3: Open Pull Request
+   - Use GitHub UI to create PR from branch to main
+   - Fill in PR template (.github/PULL_REQUEST_TEMPLATE.md)
+   - Tag appropriate reviewers based on changed directories
+
+Step 4: CI Checks Run
+   - All CI checks must pass (lint, test, security, build)
+   - Fix any failing checks before proceeding
+
+Step 5: Code Review
+   - Human reviewer(s) review changes
+   - Approve if quality and governance standards are met
+   - Request changes if improvements are needed
+
+Step 6: Merge
+   - After approval and CI passing, merge the PR
+   - Use "Squash and merge" or "Rebase and merge" (not "Merge commit")
+   - Delete feature branch after merge
+```
+
+### Bypassing Branch Protection
+
+**CRITICAL RULE**: Branch protection settings should NOT allow bypassing by administrators, maintainers, or human reviewers.
+
+**Rationale**: Even the Repository Owner (Founder) must follow the same governance rules. No exceptions.
+
+If an emergency fix is required:
+1. Create a hotfix branch following standard workflow
+2. Create PR with "emergency/hotfix" label
+3. Request expedited review
+4. Merge with proper approvals after review
+
+### Codeowners (Recommended)
+
+Create a `.github/CODEOWNERS` file to define who must approve changes to specific directories:
+
+**Example CODEOWNERS**:
+```
+# High-risk directories require Founder approval
+GOVERNANCE/           @ranjan-expatready
+AGENTS/               @ranjan-expatready
+.github/workflows/    @ranjan-expatready
+
+# Framework knowledge can be reviewed by any contributor
+FRAMEWORK_KNOWLEDGE/  *
+
+# Application code follows standard review process
+APP/                  *
+
+# Documentation updates are low-risk
+*.md                  * @ranjan-expatready
+```
+
+### Violation Detection
+
+If someone attempts to push directly to main, GitHub will reject the push with:
+
+```
+ERROR: Protected branch update failed for main.
+At least 1 approving review is required by reviewers with write access.
+```
+
+If CI checks are failing:
+```
+ERROR: Protected branch update failed for main.
+Required status check "lint" is expected (2/2 required).
+```
+
+### Monitoring and Alerts
+
+GitHub provides built-in notifications for:
+- Branch protection rule violations
+- Failing CI checks on PRs
+- Approvals requested
+- Merge events
+
+Configure GitHub repository settings to receive:
+- Email notifications for PR reviews
+- Slack/Discord notifications for CI failures
+- Security alerts for vulnerabilities
+
+### Periodic Review
+
+Branch protection rules should be reviewed:
+- **Quarterly**: Ensure all required checks exist and pass
+- **On major framework changes**: Update review requirements if needed
+- **After security incidents**: Strengthen protection if necessary
+
+### Compliance Verification
+
+**Checklist for verifying branch protection compliance**:
+
+```
+[ ] 1. Branch protection is enabled on main
+[ ] 2. Require PR before merging is enabled
+[ ] 3. At least 1 human approval is required
+[ ] 4. All CI checks are required to pass
+[ ] 5. Force pushes are disabled
+[ ] 6. Branch deletion is disabled
+[ ] 7. No bypass of rules is allowed for admins
+[ ] 8. CODEOWNERS file is configured (recommended)
+[ ] 9. CI workflow runs on every PR
+[ ] 10. Recent PRs followed the enforcement rules
+```
+
+### Reference Files
+
+- **Branch Protection Setup Guide**: See `RUNBOOKS/repo-governance.md` for step-by-step GitHub UI instructions
+- **CI Workflow Definition**: See `.github/workflows/ci.yml` for required checks
+- **PR Template**: See `.github/PULL_REQUEST_TEMPLATE.md` for PR format requirements
+
+---
+
 ## COMPLIANCE STATEMENT
 
 Every action taken by the Autonomous Engineering OS must satisfy:
@@ -344,9 +678,11 @@ Every action taken by the Autonomous Engineering OS must satisfy:
 5. ✅ Risk acceptable for context
 6. ✅ Rollback plan exists for irreversible actions
 7. ✅ Human approval obtained for Tier 1 gates
+8. ✅ Main branch protection policy followed (PR-only workflow)
 
 ---
 
 ## Version History
 
+- v1.1 (Branch Protection): Added Main Branch Protection Policy and PR-only enforcement
 - v1.0 (Initial): Core guardrails, one-writer rule, approval gates, safe terminal policy
