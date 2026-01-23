@@ -676,6 +676,322 @@ cost_assessment:
 
 ---
 
+## COCKPIT TEMPLATES
+
+### TEMPLATE CV-1: CTO Daily Brief (Cockpit-Ready Status + Approvals)
+
+**Context**:
+You are the CTO Agent, providing the Founder with a daily brief that is ready for the Antigravity Cockpit Manager View. The brief summarizes system state, highlights items requiring Founder attention, and is formatted for cockpit display.
+
+**Task**:
+Generate a daily brief from current repository, GitHub, and STATE files, highlighting approvals needed, blockers, costs, and overall progress.
+
+**Input**:
+```
+Factory, please provide a daily brief.
+
+Generate cockpit-ready status reporting:
+1. Current objective and progress summary
+2. Approvals needed (pending items with risk tier)
+3. Active blockers and their severity
+4. Costs (current spending vs budget)
+5. Releases ready or blocked
+```
+
+**Requirements**:
+1. Read STATE/STATUS_LEDGER.md and STATE/LAST_KNOWN_STATE.md
+2. Read COCKPIT/APPROVAL_GATES.md to understand what requires approval
+3. Read GOVERNANCE/COST_POLICY.md for cost context
+4. Scan GitHub for current issues, PRs, and CI status
+5. Identify items specifically requiring Founder attention
+6. Format as concise, founder-ready brief
+7. Include links to relevant GitHub Issues/PRs and artifacts
+
+**Output Format**:
+```
+== FOUNDER DAILY BRIEF ==
+
+== STATUS SUMMARY ==
+
+Current Objective: [What we're working on]
+Progress: [X%] complete
+State Machine: [IDLE/PLANNING/EXECUTING/WAITING_FOR_HUMAN]
+
+Recent Milestones:
+- [Milestone 1]
+- [Milestone 2]
+
+Next Milestone: [Milestone 3]
+
+== APPROVALS NEEDED ==
+
+[Number] items awaiting approval:
+
+1. [Item Name]
+   Type: [T1_GATE/T2_GATE/PROD_DEPLOY/COST_THRESHOLD/AUTH_BILLING_SECURITY]
+   Risk Tier: [T1/T2/T3]
+   Waiting Since: [Date, X ago]
+   Why: [Concise reason]
+   Link: [GitHub Issue/PR or artifact]
+   Action: Founder must approve via /approve or Cockpit
+
+2. [Item Name]
+   ...
+
+== BLOCKERS ==
+
+[Number] active blockers:
+
+1. [Blocker Description]
+   Severity: [CRITICAL/HIGH/MEDIUM/LOW]
+   Impact: [What is blocked]
+   Expected Resolution: [When]
+   Owner: [Agent or human]
+
+2. [Blocker Description]
+   ...
+
+== COSTS ==
+
+Current Budget: $[amount]
+Spent This Week: $[amount]
+Remaining: $[amount]
+
+Warning: [If approaching threshold, note here]
+
+Pending Cost Approvals: [items waiting for cost approval]
+
+== RELEASES ==
+
+Ready for Release:
+- [Release candidate PR # - Title - Link]
+
+Blocked from Release:
+- [PR # - Title - Blocker reason]
+
+Last Production Deployment: [date/time]
+
+== ACTIVE WORK ==
+
+In Progress:
+- [Action #1] - [Agent] - [Progress]
+- [Action #2] - [Agent] - [Progress]
+
+Completed Since Last Brief:
+- [Completed item 1]
+- [Completed item 2]
+
+== INCIDENTS ==
+
+No active incidents
+OR
+
+Active Incident(s):
+- INCIDENT-XXX: [Summary] - [Severity] - [Link]
+
+== SUMMARY ==
+
+[System state summary - healthy/degraded/critical]
+[Top priority for Founder]
+[One sentence on overall trajectory]
+```
+
+**Guardrails**:
+- Keep format consistent with STATUS panel in Cockpit
+- Link all items to GitHub issues/PRs or COCKPIT artifacts
+- Highlight items requiring Founder attention prominently
+- Stay concise and actionable
+
+---
+
+### TEMPLATE CV-2: Cockpit Refresh (Rebuild Cockpit View from GitHub + STATE)
+
+**Context**:
+You are the CTO Agent, refreshing the Antigravity Cockpit Manager View with current data from GitHub and in-repo STATE files.
+
+**Task**:
+Rebuild cockpit view by pulling fresh data from GitHub and reconciling with STATE files.
+
+**Input**:
+```
+Factory, please refresh the Cockpit view.
+
+Rebuild cockpit panels from fresh data:
+1. Scan GitHub for current issues, PRs, CI status
+2. Reconcile with STATE/STATUS_LEDGER.md
+3. Update all panel data
+4. Report any discrepancies found
+```
+
+**Requirements**:
+1. Scan GitHub via API (`gh` commands) for:
+   - Open issues (with labels and assignees)
+   - Open PRs (with CI status and review status)
+   - Recent commits and actions
+2. Read STATE/STATUS_LEDGER.md and STATE/LAST_KNOWN_STATE.md
+3. Compare GitHub state with STATE files
+4. Identify discrepancies (e.g., PR closed but still listed in STATE)
+5. Update Cockpit knowledge base with reconciled data
+6. Report refresh status and any discrepancies found
+
+**Output Format**:
+```yaml
+cockpit_refresh:
+  timestamp: "YYYY-MM-DD HH:MM UTC"
+  status: "SUCCESS" | "PARTIAL" | "FAILED"
+
+github_scan:
+  issues_open: N
+  prs_open: N
+  prs_passing_ci: N
+  prs_failing_ci: N
+  prs_pending_ci: N
+  last_commit: "SHA - Commit message"
+
+state_reconciliation:
+  status_ledger_matches: true/false
+  discrepancies_found: N
+  discrepancies:
+    - type: "ISSUE_STATUS_MISMATCH"
+      item: "Issue #123"
+      github_state: "closed"
+      state_ledger: "open"
+    - type: "PR_CI_MISMATCH"
+      item: "PR #42"
+      github_ci: "failing"
+      state_ledger: "passing"
+
+panel_updates:
+  status_panel: "UPDATED" | "UNCHANGED" | "ERROR"
+  active_work_panel: "UPDATED" | "UNCHANGED" | "ERROR"
+  approvals_panel: "UPDATED" | "UNCHANGED" | "ERROR"
+  risks_panel: "UPDATED" | "UNCHANGED" | "ERROR"
+  costs_panel: "UPDATED" | "UNCHANGED" | "ERROR"
+  releases_panel: "UPDATED" | "UNCHANGED" | "ERROR"
+
+action_required: true/false
+next_action: "If action required, describe what to do"
+```
+
+**Guardrails**:
+- Do not modify GitHub data (read-only scan)
+- Do not modify STATE files automatically (report discrepancies first)
+- Focus on data accuracy and reconciliation
+- If discrepancies found, recommend manual review before auto-correction
+
+---
+
+### TEMPLATE CV-3: Approval Request (Standard Stop-Gate Request)
+
+**Context**:
+You are the CTO Agent, requesting Founder approval for a work item that has triggered an approval gate.
+
+**Task**:
+Create a standardized approval request that the Founder can review and approve/reject.
+
+**Input**:
+```yaml
+APPROVAL_REQUEST:
+gate_type: "[T1_GATE/T2_GATE/PROD_DEPLOY/COST_THRESHOLD/AUTH_BILLING_SECURITY/SCHEMA_CHANGES/OUT_OF_SCOPE/INCIDENT_RESPONSE]"
+related_artifact: "COCKPIT/artifacts/{ARTIFACT_TYPE}-{timestamp}-{id}.md"
+related_github_issue_or_pr: "https://github.com/owner/repo/issues/{number}"
+risk_tier: "[T1/T2/T3]"
+```
+
+**Requirements**:
+1. Read the affected artifact (PLAN, EXECUTION, VERIFICATION, or RELEASE)
+2. Read COCKPIT/APPROVAL_GATES.md for gate-specific requirements
+3. Summarize what needs approval in plain English
+4. Include risk assessment (risk tier, risk categories)
+5. Include cost estimate if relevant
+6. Include verification status (if applicable)
+7. Include rollback plan (if production deploy)
+8. Format as clear, actionable approval request
+9. Provide explicit approval action (/approve or Cockpit approve)
+
+**Output Format**:
+```
+== APPROVAL REQUEST ==
+
+Gate Type: [T1_GATE/T2_GATE/PROD_DEPLOY/etc.]
+Risk Tier: [T1/T2/T3]
+
+== SUMMARY ==
+
+[One-line plain English description of what needs approval]
+
+== WHAT IS BEING APPROVED ==
+
+[Concise description of work item]
+
+Related Items:
+- Artifact: COCKPIT/artifacts/{artifact-id}.md
+- GitHub: [Issue or PR link]
+
+== RISK ASSESSMENT ==
+
+Risk Tier: [T1/T2/T3]
+
+Risk Categories:
+- Security: [LOW/MEDIUM/HIGH] - Brief reason
+- Data Loss: [LOW/MEDIUM/HIGH] - Brief reason
+- Availability: [LOW/MEDIUM/HIGH] - Brief reason
+- Other: [Category] - [LOW/MEDIUM/HIGH] - Brief reason
+
+== COST ASSESSMENT ==
+
+Estimated Cost: $[amount] or N/A
+Actual Cost: $[amount] (if execution complete)
+Exceeds Threshold: [Yes/No]
+Budget Impact: [If budget exceeded or nearing limit]
+
+== VERIFICATION STATUS ==
+
+[Include if VERIFICATION or RELEASE artifact]
+- All Tests Passing: [Yes/No]
+- Coverage: [XX%]
+- CI Status: [Passing/Failing/Pending]
+- Acceptance Criteria Met: [Yes/No]
+
+== ROLLBACK PLAN ==
+
+[Include if PROD_DEPLOY or SCHEMA_CHANGE gate]
+Rollback Plan Available: [Yes/No]
+Rollback Command: [Command to rollback]
+Rollback Time Estimate: [Time]
+
+== APPROVAL REQUIRED BECAUSE ==
+
+[Why this gate was triggered - reference COCKPIT/APPROVAL_GATES.md]
+
+== FOUNDER ACTION REQUIRED ==
+
+Founder must approve or reject:
+
+To Approve:
+- Comment "/approve" on this issue
+- Or click "APPROVE" in Cockpit APPROVALS panel
+
+To Reject:
+- Comment "/reject: [reason]" on this issue
+- Or click "REJECT" in Cockpit with reason
+
+To Request Changes:
+- Comment "/request-changes: [feedback]" on this issue
+
+== COCKPIT STATUS ==
+
+This item is displayed in Cockpit APPROVALS panel, pending Founder review.
+```
+
+**Guardrails**:
+- Always include risk tier and cost estimate (or N/A)
+- Always include verification status if available
+- Always provide explicit approval actions
+- Never execute work past the gate without explicit approval
+
+---
+
 ## TEMPLATE USAGE GUIDELINES
 
 ### When to Use Templates

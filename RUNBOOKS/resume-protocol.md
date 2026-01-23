@@ -6,6 +6,47 @@ This runbook defines the exact step-by-step procedure that the CTO Agent follows
 
 ---
 
+## ARTIFACTS-FIRST GOVERNANCE MODEL
+
+### Cockpit Integration
+
+The resume protocol operates within an **artifacts-first governance model**. All work is represented as artifacts in COCKPIT/artifacts/ that the Founder can review, approve, and track via the Antigravity Cockpit Manager View.
+
+**Three-Layer Governance**:
+1. **Manager View (Antigravity Cockpit)**: Founder's interface for reviewing artifacts, approving work, and monitoring progress
+2. **Artifact Layer (COCKPIT/)**: Complete auditable records of work (PLAN, EXECUTION, VERIFICATION, RELEASE, INCIDENT)
+3. **Execution Layer (Factory AGENTS/**): Autonomous agents executing work based on approved artifacts and guardrails
+
+**How Resume Protocol Uses Cockpit Artifacts**:
+
+During resume, the protocol:
+- Reads COCKPIT/APPROVAL_GATES.md to understand what requires founder approval
+- Reads COCKPIT/ARTIFACT_TYPES.md to understand artifact structure and status
+- Reads COCKPIT/ARTIFACT_INDEX.md to locate current active artifacts
+- Checks COCKPIT/artifacts/ for pending approvals (WAITING_FOR_HUMAN state)
+- Updates STATUS_LEDGER.md which feeds back to Cockpit panels
+
+**Founder's Review Layer**:
+
+When Factory resumes work, the Founder can:
+1. View Cockpit STATUS panel for current state (refreshed via `/status` or `/refresh`)
+2. Review Cockpit APPROVALS panel for pending approval artifacts
+3. Review active artifacts directly (PLAN, EXECUTION, VERIFICATION, etc.)
+4. Approve or reject work items via Cockpit or GitHub comments (`/approve`, `/reject`)
+5. Review COSTS panel for spending and approval thresholds
+6. Review RELEASES panel for deployment status
+
+**Resume Protocol Transparency**:
+
+All resume activities are visible in Cockpit:
+- State machine position is displayed in STATUS panel
+- Active artifacts and their status are displayed in ACTIVE WORK panel
+- Items awaiting founder approval are displayed in APPROVALS panel
+- Cost tracking is visible in COSTS panel
+- Any incidents are displayed in RISKS panel
+
+---
+
 ## WHEN TO RUN RESUME PROTOCOL
 
 Run this protocol whenever:
