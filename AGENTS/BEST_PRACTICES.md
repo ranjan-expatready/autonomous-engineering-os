@@ -447,7 +447,27 @@ GOOD: Check user is not None before accessing attributes
 
 ## KNOWLEDGE AGENT BEST PRACTICES
 
-### 26. Capture "Why" Not Just "What"
+### 26. Use Docs MCP for Technical Facts
+
+**Practice**:
+- Always use docs or docs_arabold MCP server for technical documentation queries
+- Do not rely on memory or training data for versioned APIs and frameworks
+- Prioritize docs_arabold for library/framework documentation with versioning
+- Cross-reference repo doctrine (FRAMEWORK_KNOWLEDGE/) before external sources
+- Document publication dates when citing external docs
+
+**Example**:
+```
+BAD: "The React useEffect hook takes a dependency array and cleanup function."
+GOOD: "Per docs_arabold (React 18.3.1 docs), useEffect accepts (effect, dependencies)
+      where dependencies is optional array and effect returns optional cleanup function."
+```
+
+**Reference**: See GOVERNANCE/GUARDRAILS.md - DOCUMENTATION SOURCES POLICY
+
+---
+
+### 27. Capture "Why" Not Just "What"
 
 **Practice**:
 - Document the reasoning behind decisions
@@ -457,7 +477,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 27. Keep Documentation Current
+### 28. Keep Documentation Current
 
 **Practice**:
 - Update docs immediately when code changes
@@ -467,7 +487,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 28. Make Knowledge Queryable
+### 29. Make Knowledge Queryable
 
 **Practice**:
 - Use consistent naming
@@ -477,7 +497,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 29. Learn from All Agents
+### 30. Learn from All Agents
 
 **Practice**:
 - Capture patterns from Code Agent
@@ -487,7 +507,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 30. Answer Completely but Concisely
+### 31. Answer Completely but Concisely
 
 **Practice**:
 - Give full answer in one response
@@ -499,7 +519,7 @@ GOOD: Check user is not None before accessing attributes
 
 ## ADVISOR AGENT BEST PRACTICES
 
-### 31. Never Write Code
+### 32. Never Write Code
 
 **Practice**:
 - Advisory mode only — text comments
@@ -509,7 +529,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 32. Consider Multiple Perspectives
+### 33. Consider Multiple Perspectives
 
 **Practice**:
 - Present 2-3 options, not just "the" answer
@@ -519,7 +539,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 33. Reference Industry Standards
+### 34. Reference Industry Standards
 
 **Practice**:
 - Cite common patterns and practices
@@ -529,7 +549,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 34. Identify Risks, Don't Just Solve
+### 35. Identify Risks, Don't Just Solve
 
 **Practice**:
 - Point out potential problems
@@ -539,7 +559,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 35. Ask Clarifying Questions
+### 36. Ask Clarifying Questions
 
 **Practice**:
 - Don't assume requirements
@@ -551,7 +571,7 @@ GOOD: Check user is not None before accessing attributes
 
 ## INTER-AGENT COORDINATION BEST PRACTICES
 
-### 36. Clear Handoffs
+### 37. Clear Handoffs
 
 **Practice**:
 - Explicitly state when handing off
@@ -561,7 +581,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 37. Respect Agent Boundaries
+### 38. Respect Agent Boundaries
 
 **Practice**:
 - Don't do other agents' jobs
@@ -571,7 +591,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 38. Share Context, Don't Withhold
+### 39. Share Context, Don't Withhold
 
 **Practice**:
 - Make all decisions visible
@@ -581,7 +601,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 39. Coordinate Parallel Work
+### 40. Coordinate Parallel Work
 
 **Practice**:
 - Identify when work can happen in parallel
@@ -591,7 +611,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 40. Learn from Each Other
+### 41. Learn from Each Other
 
 **Practice**:
 - Feedback loop between agents
@@ -603,7 +623,7 @@ GOOD: Check user is not None before accessing attributes
 
 ## COMMUNICATION WITH HUMAN BEST PRACTICES
 
-### 41. Be Transparent About Uncertainty
+### 42. Be Transparent About Uncertainty
 
 **Practice**:
 - Say "I don't know" when unsure
@@ -613,7 +633,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 42. Explain Complex Concepts Simply
+### 43. Explain Complex Concepts Simply
 
 **Practice**:
 - Avoid jargon when possible
@@ -623,7 +643,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 43. Present Options Clearly
+### 44. Present Options Clearly
 
 **Practice**:
 - Use numbered lists for options
@@ -633,7 +653,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 44. Report Progress Regularly
+### 45. Report Progress Regularly
 
 **Practice**:
 - Report key milestones reached
@@ -643,7 +663,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 45. Ask Permission Before Expensive Operations
+### 46. Ask Permission Before Expensive Operations
 
 **Practice**:
 - Always ask for high-cost operations
@@ -655,7 +675,7 @@ GOOD: Check user is not None before accessing attributes
 
 ## ERROR HANDLING BEST PRACTICES
 
-### 46. Analyze Before Blaming
+### 47. Analyze Before Blaming
 
 **Practice**:
 - Understand the full error context
@@ -665,7 +685,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 47. Propose Solutions, Not Just Problems
+### 48. Propose Solutions, Not Just Problems
 
 **Practice**:
 - Always suggest a fix approach
@@ -675,7 +695,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 48. Learn from Mistakes
+### 49. Learn from Mistakes
 
 **Practice**:
 - Document what went wrong
@@ -685,7 +705,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 49. Handle Failures Gracefully
+### 50. Handle Failures Gracefully
 
 **Practice**:
 - Don't crash on unexpected inputs
@@ -695,7 +715,7 @@ GOOD: Check user is not None before accessing attributes
 
 ---
 
-### 50. Know When to Escalate
+### 51. Know When to Escalate
 
 **Practice**:
 - Recognize beyond-capacity situations
@@ -713,7 +733,7 @@ GOOD: Check user is not None before accessing attributes
 | **Product** | Understand intent, testable criteria, value-based prioritization |
 | **Code** | Read first, small changes, test alongside, handle errors |
 | **Reliability** | Test thoroughly, monitor, check security, validate performance |
-| **Knowledge** | Capture "why", keep current, make queryable, answer completely |
+| **Knowledge** | Use docs MCP for technical facts, capture "why", keep current, make queryable, answer completely |
 | **Advisor** | Never write, consider perspectives, reference standards, identify risks |
 | **Coordination** | Clear handoffs, respect boundaries, share context |
 | **Human Comm** | Transparent, simple explanations, clear options, report progress |
@@ -723,4 +743,5 @@ GOOD: Check user is not None before accessing attributes
 
 ## VERSION HISTORY
 
+- v1.1 (MCP Documentation): Added Best Practice #26 - Use Docs MCP for Technical Facts
 - v1.0 (Initial): 50 best practices covering all agents and key areas
