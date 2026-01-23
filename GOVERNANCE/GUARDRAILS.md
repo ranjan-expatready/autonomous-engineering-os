@@ -639,6 +639,151 @@ README.md             # Project documentation
 
 **Rationale**: Application code follows standard software engineering practices with automated testing and quality gates.
 
+---
+
+### Dev Stage Fast Mode
+
+**Purpose**: Enable rapid development iterations for low-risk changes while maintaining safety for core governance and infrastructure.
+
+#### Core Principle
+
+**Speed with Safety**: Low-risk changes can merge autonomously with CI passing, while governance and infrastructure changes retain human review requirements.
+
+#### Directory-Based Auto-Merge Rules
+
+**Auto-Merge with CI Only** (No Human Review Required):
+
+Changes in the following directories can merge automatically when all CI checks pass:
+
+```
+APP/**                # Application code (features, bug fixes, refactors)
+PRODUCT/**            # Product specifications, requirements, user stories
+BACKLOG/**            # Backlog items, task definitions, tickets
+FRAMEWORK_KNOWLEDGE/** # Technical knowledge and best practices
+ARCHITECTURE/**       # Architecture documentation
+RUNBOOKS/**           # Operational procedures and guides
+```
+
+**Requirements for Auto-Merge**:
+- All CI checks must pass (lint, test-unit, test-integration, security, build)
+- Unit tests for new features must exist (see QUALITY_GATES.md)
+- Coverage meets current stage threshold (see QUALITY_GATES.md)
+- No breaking changes to public APIs (auto-detected)
+- No integration with new external services (auto-detected)
+
+**Review**: Optional (bot or human can review at discretion)
+
+---
+
+**Human Approval Required** (1 Reviewer Minimum):
+
+Changes in the following directories **MUST** receive human approval before merging:
+
+```
+GOVERNANCE/**          # Governance policies, guardrails, cost policy, risk tiers
+AGENTS/**              # Agent contracts, roles, best practices, prompt templates
+.github/workflows/**   # CI/CD workflows and automation
+```
+
+**Rationale**: These directories define the core operating rules, agent behaviors, and automated execution policies. Changes here fundamentally alter how the Autonomous Engineering OS operates and require human judgment.
+
+**Requirements**:
+- All CI checks must pass
+- At least 1 human reviewer approval
+- Changes to GOVERNANCE/ require explicit Founder/CTO approval
+- Changes to AGENTS/ require explicit review of agent behavior impact
+- Changes to .github/workflows/ require explicit review of CI/CD impact
+
+---
+
+#### Risk Tier Overrides
+
+**Regardless of directory**, human approval is **ALWAYS REQUIRED** for:
+
+**Tier 1 (Critical) Changes**:
+- Production deployment (GATE-3)
+- Security credential usage
+- Payment processing changes
+- Database migration on production
+- Breaking API changes
+
+**Tier 2 (High) Changes**:
+- Database schema changes (DDL)
+- External API integration (new third-party service)
+- Major dependency upgrades
+- Infrastructure changes with cost impact
+
+**Rationale**: Certain changes carry inherent risk regardless of which directory they touch. Risk tier classification takes precedence over directory-based rules.
+
+---
+
+#### Risk-Based Approval Matrix
+
+| Directory Path | T0 (Info) | T3 (Low Risk) | T2 (High Risk) | T1 (Critical) |
+|----------------|-----------|---------------|----------------|---------------|
+| APP/** | N/A | Auto-Merge (CI only) | Auto-Merge (CI only) | Human Approval Required |
+| PRODUCT/** | Auto-Merge | Auto-Merge (CI only) | Auto-Merge (CI only) | Human Approval Required |
+| BACKLOG/** | Auto-Merge | Auto-Merge (CI only) | Auto-Merge (CI only) | Human Approval Required |
+| FRAMEWORK_KNOWLEDGE/** | Auto-Merge | Auto-Merge (CI only) | Human Approval Required | Human Approval Required |
+| ARCHITECTURE/** | Auto-Merge | Auto-Merge (CI only) | Human Approval Required | Human Approval Required |
+| RUNBOOKS/** | Auto-Merge | Auto-Merge (CI only) | Human Approval Required | Human Approval Required |
+| GOVERNANCE/** | Auto-Merge | Human Approval Required | Human Approval Required | Human Approval Required |
+| AGENTS/** | Auto-Merge | Human Approval Required | Human Approval Required | Human Approval Required |
+| .github/workflows/** | N/A | Human Approval Required | Human Approval Required | Human Approval Required |
+
+**Legend**:
+- **Auto-Merge**: Merges automatically when CI passes (no review)
+- **Auto-Merge (CI only)**: Merges automatically when CI passes (optional review)
+- **Human Approval Required**: Requires at least 1 human review before merge
+
+---
+
+#### Implementation Notes
+
+**Bot Configuration** (Future Enhancement):
+- Configure GitHub bot to auto-merge eligible PRs when CI passes
+- Use GitHub's Auto-merge feature with required status checks
+- Optional: Configure CODEOWNERS to auto-approve designated directories
+
+**Coverage Requirements**:
+- See `GOVERNANCE/QUALITY_GATES.md` for staged coverage requirements
+- Current stage enforces coverage thresholds before auto-merge
+
+**Safety Checks**:
+- System will auto-detect if change touches multiple directories
+- If change spans both auto-merge and approval-required paths → Approval required
+- Risk tier classification always overrides directory rules when higher-risk
+
+---
+
+#### Monitoring and Audit
+
+**Metrics to Track**:
+- Auto-merged PRs count vs. manually reviewed PRs
+- Failure rate of auto-merged PRs (CI failures, regressions)
+- Risk tier distribution of merged PRs
+- Directory distribution of merged PRs
+- Average time from PR creation to merge (auto vs manual)
+
+**Alerts**:
+- Spike in auto-merged PR failures (indicates weak CI)
+- Auto-merge attempts on governance directories (blocked by policy)
+- High-risk changes bypassing review (policy violation)
+
+---
+
+#### Transition Process
+
+**If Dev Fast Mode is Disabled**:
+All changes revert to requiring human approval regardless of directory.
+
+To enable/disable Dev Fast Mode:
+1. Update this section policy
+2. Configure or disable GitHub auto-merge rules
+3. Document change in governance changelog
+
+---
+
 ### Enforced Workflow
 
 The REQUIRED workflow for changes to main:
@@ -855,6 +1000,7 @@ Adding or removing MCP servers requires:
 
 ## Version History
 
+- v1.3 (Dev Fast Mode): Added Dev Stage Fast Mode for directory-based auto-merge with CI
 - v1.2 (Branch Protection): Added Main Branch Protection Policy and PR-only enforcement
 - v1.1 (MCP Integration): Added MCP Usage Rules for filesystem, fetch, and docs servers
 - v1.0 (Initial): Core guardrails, one-writer rule, approval gates, safe terminal policy

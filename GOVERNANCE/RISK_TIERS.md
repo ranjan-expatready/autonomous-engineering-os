@@ -368,6 +368,202 @@ Maintain log of:
 
 ---
 
+## APPROVAL REQUIREMENTS BY RISK TIER
+
+### Approval Matrix
+
+| Risk Tier | Human Approval | CI Required | Rollback Required | Auto-Merge Eligible |
+|-----------|----------------|-------------|-------------------|---------------------|
+| T0 (Informational) | No | No | N/A | Yes |
+| T3 (Low Risk) | No (per Dev Fast Mode) | Yes | Yes | Yes (if CI passes) |
+| T2 (High Risk) | Yes (1 reviewer min) | Yes | Yes (tested) | No |
+| T1 (Critical) | Yes (explicit auth) | Yes | Yes (tested + ready) | Never |
+
+**Definition of Columns**:
+- **Human Approval**: Whether human review is required before merge
+- **CI Required**: Whether automated checks must pass (lint, tests, security)
+- **Rollback Required**: Whether rollback plan must be documented/tested
+- **Auto-Merge Eligible**: Whether PR can merge automatically when CI passes
+
+---
+
+### Directory-Based Approval Override (Dev Fast Mode)
+
+When `Dev Stage Fast Mode` is enabled (see GOVERNANCE/GUARDRAILS.md), approval requirements override standard risk tier rules:
+
+**Auto-Merge with CI Only** (No Human Review Required):
+- `APP/**` features, bug fixes, refactors
+- `PRODUCT/**` specifications, requirements, user stories
+- `BACKLOG/**` task definitions, tickets
+- `FRAMEWORK_KNOWLEDGE/**` technical knowledge
+- `ARCHITECTURE/**` architecture documentation
+- `RUNBOOKS/**` operational procedures
+
+**Human Approval Required** (1 Reviewer Minimum):
+- `GOVERNANCE/**` governance policies (Founder/CTO approval)
+- `AGENTS/**` agent contracts, roles, behaviors
+- `.github/workflows/**` CI/CD workflows and automation
+
+**Important**: Risk tier T1/T2 ALWAYS require human approval regardless of directory.
+
+---
+
+### Approval Workflow by Tier
+
+#### Tier 0 (Informational): No Approval
+1. Execute operation
+2. Log action (optional)
+3. No gates or checks
+
+**Example**: Read file, view logs, generate report
+
+---
+
+#### Tier 3 (Low Risk): CI-Only or Optional Review
+**Standard Workflow**:
+1. Create feature branch
+2. Make changes
+3. Commit and push
+4. Open PR (optional)
+5. CI runs automatically
+6. If CI passes:
+   - Dev Fast Mode enabled: Auto-merge (no review)
+   - Dev Fast Mode disabled: Optional human review
+7. Merge and continue
+
+**When Review is Required** (T3 in GOVERNANCE/, AGENTS/):
+1. Follow standard workflow through step 5
+2. Request human review (1 reviewer minimum)
+3. Obtain approval
+4. Merge
+
+**Example**: Refactor function, fix typo, add documentation
+
+---
+
+#### Tier 2 (High Risk): Human Approval Required
+**Required for T2**:
+- At least 1 human reviewer approval
+- All CI checks must pass
+- Rollback plan documented and tested
+- Impact assessment completed
+- Staging deployment verified
+
+**Approval Workflow**:
+1. Create feature branch
+2. Implement with rollback plan
+3. Document impact and risks
+4. Open PR with "high-risk" label
+5. Request review from appropriate reviewers (1+)
+6. CI runs automatically
+7. Reviewer (or Founder) assesses:
+   - Rollback plan viability
+   - Risk mitigation strategies
+   - Potential customer impact
+8. Obtain explicit approval ("LGTM" or approved)
+9. Merge when approved and CI passing
+
+**Example**: Database schema change, breaking API modification, major dependency upgrade
+
+---
+
+#### Tier 1 (Critical): Explicit Authorization Required
+**Required for T1**:
+- Explicit human authorization before ANY execution
+- Can plan and present, but cannot execute without command
+- All CI checks must pass
+- Production rollback plan tested and ready
+- Incident response plan documented
+- Stakeholder notification (if applicable)
+- Security and compliance reviews completed
+- Monitoring/alerting configured
+
+**Authorization Workflow**:
+1. Agent identifies operation as T1
+2. STOP and present to human:
+   - Operation description
+   - Risk tier with justification
+   - Rollback plan
+   - Impact assessment
+   - Monitoring plan
+3. Human explicitly authorizes:
+   ```
+   "Factory, approved: execute [operation]"
+   ```
+   OR
+   ```
+   "Factory, proceed with [operation] as T1, here's the authorization"
+   ```
+4. Agent executes with explicit authorization present
+5. Post-execution verification and documentation
+
+**Example**: Production deployment, security credential usage, payment processing changes
+
+---
+
+### Reviewer Requirements
+
+#### Who Approves What?
+
+**Tier 3** (Low Risk):
+- Dev Fast Mode enabled: No approval required (auto-merge)
+- Dev Fast Mode disabled: Any team member with write access
+- Optional: Peer review encouraged but not required
+
+**Tier 2** (High Risk):
+- Any team member with write access AND relevant expertise
+- Database changes: Database owner or senior engineer
+- API changes: Backend team lead or API owner
+- Infrastructure changes: DevOps engineer or infrastructure owner
+- External integrations: Integration specialist or security reviewer
+
+**Tier 1** (Critical):
+- Repository Owner (Founder) or designated approver
+- Production deployment: Founder/CTO approval required
+- Security changes: Security reviewer + Founder approval
+- Payment changes: Finance owner + Founder approval
+- Compliance changes: Compliance officer + Founder approval
+
+**Governance Directories** (GOVERNANCE/, AGENTS/, .github/workflows/):
+- GOVERNANCE/ changes: Founder/CTO approval required (always)
+- AGENTS/ changes: Agent behavior impact review + Founder approval
+- .github/workflows/ changes: DevOps review + Founder approval
+
+---
+
+### CODEOWNERS Integration
+
+When `.github/CODEOWNERS` file exists, approval requirements are enforced via:
+
+**Example CODEOWNERS Configuration**:
+```
+# Governance requires Founder approval
+GOVERNANCE/** @ranjan-expatready
+
+# Agents require Founder review
+AGENTS/** @ranjan-expatready
+
+# CI/CD requires DevOps review
+.github/workflows/** @devops-team
+
+# Database changes require DB owner
+**/*.sql @database-team
+
+# Payment processing requires security + finance
+**/payment/** @security-team @finance-team @ranjan-expatready
+
+# All application code requires any team member review (optional, for coverage)
+APP/** *
+```
+
+**CODEOWNERS + Risk Tier**:
+- CODEOWNERS requirements ADD to risk tier requirements
+- If T1 but CODEOWNERS doesn't list anyone → Explicit founder approval still required
+- If T3 but CODEOWNERS lists specific owners → Those owners must approve
+
+---
+
 ## VERSION HISTORY
 
+- v1.1 (Approval Mapping): Added approval requirements by tier and directory
 - v1.0 (Initial): Four-tier classification system, assessment flow, examples
