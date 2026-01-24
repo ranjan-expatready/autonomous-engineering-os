@@ -17,10 +17,6 @@ jobs:
     name: Machine Board Validation
     runs-on: ubuntu-latest
 
-    # IMPORTANT: This job must run on the PR head commit
-    # to access PR description and changed files
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,14 +31,23 @@ jobs:
       - name: Run Governance Validator
         id: govern
         env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_DESCRIPTION: ${{ github.event.pull_request.body }}
-          GITHUB_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.number }}
+          PR_DESCRIPTION: ${{ github.event.pull_request.body || github.event.head_commit.message }}
+          GITHUB_BASE_REF: ${{ github.event.base_ref || github.event.pull_request.base.ref || 'main' }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           echo "🤖 Running Machine Board of Directors Governance Validator"
+          echo "Event: $EVENT_NAME"
           echo "PR Number: $PR_NUMBER"
           echo "Base Branch: $GITHUB_BASE_REF"
           echo ""
+          
+          # Skip validation on push events (only for PRs)
+          if [ "$EVENT_NAME" != "pull_request" ] && [ "$EVENT_NAME" != "pull_request_target" ]; then
+            echo "ℹ️  Skipping governance validator on push events"
+            echo "✅ Governance validation passed (skipped)"
+            exit 0
+          fi
           
           python scripts/governance_validator.py
 
@@ -55,7 +60,7 @@ jobs:
           retention-days: 30
 
       - name: Comment results on PR
-        if: always()
+        if: github.event_name == 'pull_request' && always()
         uses: actions/github-script@v6
         with:
           script: |
@@ -109,35 +114,6 @@ jobs:
           echo "Please fix the validation errors and push a new commit."
           exit 1
 
-  # Summary job for better visibility
-  validation-summary:
-    name: Validation Summary
-    runs-on: ubuntu-latest
-    needs: governance-validator
-    if: always()
-    
-    steps:
-      - name: Download results
-        uses: actions/download-artifact@v3
-        with:
-          name: governance-validator-results
-      
-      - name: Display summary
-        run: |
-          if [ -f .governance_validator_results.json ]; then
-            echo "## Governance Validation Summary" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            cat .governance_validator_results.json >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Set overall status
-        if: needs.governance-validator.result == 'success'
-        run: |
-          echo "✅ All governance validations passed"
-          
-      - name: Set failure status
-        if: needs.governance-validator.result == 'failure'
-        run: |
-          echo "❌ Governance validation failed"
-          echo "Please review the PR comments for detailed guidance"
-          exit 1
+      - name: Mark as passed
+        if: steps.govern.outcome == 'success'
+        run: echo "✅ Governance validation passed"
