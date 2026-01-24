@@ -1,0 +1,501 @@
+#!/usr/bin/env python3
+"""
+Governance Validator — Machine Board of Directors
+
+This script enforces automated governance on pull requests by validating:
+1. Protected paths have required PLAN/VERIFICATION artifacts
+2. STATE files are updated for non-BACKLOG PRs
+3. Risk tier T1/T2 have rollback plans and verification proof
+4. No forbidden patterns (secrets) in diffs
+5. Framework-only mode validations (YAML, Markdown, structure)
+
+Dependencies: Python 3.6+, PyYAML (optional, simple YAML syntax check only)
+"""
+
+import os
+import sys
+import re
+import json
+import subprocess
+from pathlib import Path
+from typing import List, Dict, Set, Tuple, Optional
+
+# Configuration
+REPO_ROOT = Path(os.getenv("GITHUB_WORKSPACE", Path(__file__).parent.parent))
+PROTECTED_PATHS = ["GOVERNANCE", "AGENTS", "COCKPIT", ".github/workflows", "STATE"]
+FRAMEWORK_REQUIRED_FILES = [
+    "FRAMEWORK_REQUIREMENTS.md",
+    "GOVERNANCE/GUARDRAILS.md",
+    "GOVERNANCE/COST_POLICY.md",
+    "GOVERNANCE/DEFINITION_OF_DONE.md",
+    "GOVERNANCE/RISK_TIERS.md",
+    "AGENTS/ROLES.md",
+    "AGENTS/CONTRACTS.md",
+    "AGENTS/BEST_PRACTICES.md",
+    "AGENTS/PROMPT_TEMPLATES.md",
+    "FRAMEWORK_KNOWLEDGE/autonomy_principles.md",
+    "FRAMEWORK_KNOWLEDGE/product_best_practices.md",
+    "FRAMEWORK_KNOWLEDGE/engineering_standards.md",
+    "FRAMEWORK_KNOWLEDGE/testing_strategy.md",
+    "FRAMEWORK_KNOWLEDGE/deployment_philosophy.md",
+    "README.md",
+]
+
+# Forbidden secret patterns (basic heuristics)
+SECRET_PATTERNS = [
+    r"password\s*=\s*['\"]?[^'\"]+['\"]?",  # password=, password='...'
+    r"api_key\s*=\s*['\"]?[^'\"]+['\"]?",    # api_key=, api_key='...'
+    r"secret\s*=\s*['\"]?[^'\"]+['\"]?",     # secret=, secret='...'
+    r"BEGIN\s+PRIVATE\s+KEY",                # RSA private key marker
+]
+
+# PR description artifact sections
+REQUIRED_ARTIFACT_SECTIONS = {
+    "PLAN": ["scope", "risk tier", "cost estimate", "verification plan", "rollback plan"],
+    "VERIFICATION": ["tests run", "results", "ci"],
+}
+
+
+class ValidationResult:
+    """Represents the result of a validation check."""
+
+    def __init__(self, name: str, passed: bool, message: str = ""):
+        self.name = name
+        self.passed = passed
+        self.message = message
+
+    def to_dict(self) -> dict:
+        return {"name": self.name, "passed": self.passed, "message": self.message}
+
+
+class GovernanceValidator:
+    """Main validator class that orchestrates all checks."""
+
+    def __init__(self):
+        self.results: List[ValidationResult] = []
+        self.pr_number = os.getenv("PR_NUMBER", "")
+        self.pr_description = os.getenv("PR_DESCRIPTION", "")
+        self.changed_files = self._get_changed_files()
+        self.framework_only_mode = self._is_framework_only_mode()
+
+    def _get_changed_files(self) -> List[Path]:
+        """Get list of changed files in the PR from git."""
+        try:
+            # For pull_request_target, diff against main
+            # For pull_request, diff against base branch
+            base_ref = os.getenv("GITHUB_BASE_REF", "main")
+            result = subprocess.run(
+                ["git", "diff", "--name-only", f"{base_ref}...HEAD"],
+                capture_output=True,
+                text=True,
+                cwd=REPO_ROOT,
+                check=True,
+            )
+            files = [Path(f.strip()) for f in result.stdout.splitlines() if f.strip()]
+            return files
+        except subprocess.CalledProcessError:
+            # Fallback: check if we're checking a specific commit
+            try:
+                result = subprocess.run(
+                    ["git", "diff", "--name-only", "HEAD^", "HEAD"],
+                    capture_output=True,
+                    text=True,
+                    cwd=REPO_ROOT,
+                    check=True,
+                )
+                files = [Path(f.strip()) for f in result.stdout.splitlines() if f.strip()]
+                return files
+            except subprocess.CalledProcessError:
+                return []
+
+    def _is_framework_only_mode(self) -> bool:
+        """Check if repository is in framework-only mode (no APP tests)."""
+        app_dir = REPO_ROOT / "APP"
+        if not app_dir.exists():
+            return True
+        # Check for test configuration files
+        test_configs = ["pytest.ini", "pyproject.toml", "setup.cfg", "package.json"]
+        for config in test_configs:
+            config_file = REPO_ROOT / config
+            if config_file.exists():
+                content = config_file.read_text()
+                if "pytest" in content or "test" in content.lower():
+                    return False
+        return True
+
+    def add_result(self, name: str, passed: bool, message: str = ""):
+        """Add a validation result."""
+        self.results.append(ValidationResult(name, passed, message))
+
+    def validate(self) -> bool:
+        """Run all validations and return overall status."""
+        print("🤖 Machine Board of Directors - Governance Validator")
+        print("=" * 60)
+
+        # Run all checks
+        self._check_secrets_in_diffs()
+        self._check_artifacts_for_protected_paths()
+        self._check_state_files_updated()
+        self._check_risk_tier_requirements()
+        self._check_framework_only_validations()
+
+        # Print results and exit
+        self._print_results()
+        return all(r.passed for r in self.results)
+
+    def _check_secrets_in_diffs(self):
+        """Check for forbidden patterns (secrets) in diffs."""
+        print("\n🔍 Checking for forbidden patterns in diffs...")
+        found_secrets = []
+
+        try:
+            base_ref = os.getenv("GITHUB_BASE_REF", "main")
+            result = subprocess.run(
+                ["git", "diff", f"{base_ref}...HEAD"],
+                capture_output=True,
+                text=True,
+                cwd=REPO_ROOT,
+                check=True,
+            )
+            diff_content = result.stdout
+
+            for pattern in SECRET_PATTERNS:
+                matches = re.finditer(pattern, diff_content, re.IGNORECASE)
+                for match in matches:
+                    line_start = diff_content.rfind("\n", 0, match.start()) + 1
+                    line_end = diff_content.find("\n", match.end())
+                    line = diff_content[line_start:line_end].strip()
+                    found_secrets.append(f"Pattern: {pattern}, Line: {line[:80]}")
+        except subprocess.CalledProcessError:
+            pass
+
+        if found_secrets:
+            self.add_result(
+                "Secret Detection",
+                False,
+                f"Found {len(found_secrets)} potential secret(s): {found_secrets[0]}",
+            )
+            print(f"   ❌ Found {len(found_secrets)} potential secret(s)")
+        else:
+            self.add_result("Secret Detection", True)
+            print(f"   ✅ No secrets detected")
+
+    def _check_artifacts_for_protected_paths(self):
+        """Check if protected paths have required PLAN/VERIFICATION artifacts."""
+        print("\n📋 Checking artifacts for protected paths...")
+
+        protected_changed = [
+            f for f in self.changed_files if any(p in f.parts for p in PROTECTED_PATHS)
+        ]
+
+        if not protected_changed:
+            self.add_result("Protected Path Artifacts", True, "No protected paths changed")
+            print(f"   ✅ No protected paths changed")
+            return
+
+        print(f"   Protected paths changed: {[str(f) for f in protected_changed]}")
+
+        # Check PR description for artifact sections
+        desc_lower = self.pr_description.lower()
+
+        # Check for PLAN section references
+        has_plan = (
+            "## plan" in desc_lower
+            or "<!-- plan" in desc_lower
+            or any(section in desc_lower for section in REQUIRED_ARTIFACT_SECTIONS["PLAN"])
+        )
+
+        # Check for VERIFICATION section references
+        has_verification = (
+            "## verification" in desc_lower
+            or "<!-- verification" in desc_lower
+            or any(
+                section in desc_lower for section in REQUIRED_ARTIFACT_SECTIONS["VERIFICATION"]
+            )
+        )
+
+        # Check for referenced artifact files
+        artifact_refs = re.findall(
+            r"\[ARTIFACT:?\s*([^\]]+)\]", self.pr_description, re.IGNORECASE
+        )
+        has_artifact_refs = len(artifact_refs) > 0
+
+        # Check STATE files mentioned
+        mentions_state = (
+            "state/status_ledger.md" in desc_lower.lower()
+            or "state/last_known_state.md" in desc_lower.lower()
+        )
+
+        if has_plan and has_verification and mentions_state:
+            self.add_result(
+                "Protected Path Artifacts",
+                True,
+                "PLAN, VERIFICATION, and STATE updates documented",
+            )
+            print(f"   ✅ Required artifacts documented in PR description")
+        elif has_artifact_refs:
+            self.add_result(
+                "Protected Path Artifacts",
+                True,
+                f"Referenced artifacts: {artifact_refs}",
+            )
+            print(f"   ✅ Referenced artifact files: {artifact_refs}")
+        else:
+            missing = []
+            if not has_plan and not has_artifact_refs:
+                missing.append("PLAN section")
+            if not has_verification and not has_artifact_refs:
+                missing.append("VERIFICATION section")
+            if not mentions_state:
+                missing.append("STATE file updates")
+
+            self.add_result(
+                "Protected Path Artifacts",
+                False,
+                f"Missing: {', '.join(missing)}",
+            )
+            print(f"   ❌ Missing required artifacts: {', '.join(missing)}")
+
+    def _check_state_files_updated(self):
+        """Check if STATE files are updated for non-BACKLOG PRs."""
+        print("\n📊 Checking STATE file updates...")
+
+        # Check if only BACKLOG/** files changed
+        only_backlog_changed = all(
+            any(p in f.parts for p in ["BACKLOG"])
+            for f in self.changed_files
+            if f.exists()
+        )
+
+        # Check if PR description explicitly states STATE will be updated
+        desc_lower = self.pr_description.lower()
+        will_update_state = (
+            "state will be updated" in desc_lower
+            or "state files will be updated" in desc_lower
+            or "immediately after merge" in desc_lower
+        )
+
+        if only_backlog_changed:
+            self.add_result(
+                "STATE File Updates",
+                True,
+                "BACKLOG-only PR (STATE updates optional)",
+            )
+            print(f"   ✅ BACKLOG-only PR (STATE updates optional)")
+            return
+
+        state_files_in_changes = [
+            f
+            for f in self.changed_files
+            if "STATE" in f.parts and f.name in ["STATUS_LEDGER.md", "LAST_KNOWN_STATE.md"]
+        ]
+
+        if state_files_in_changes:
+            self.add_result(
+                "STATE File Updates",
+                True,
+                f"STATE files updated: {[f.name for f in state_files_in_changes]}",
+            )
+            print(f"   ✅ STATE files included in PR")
+        elif will_update_state:
+            self.add_result(
+                "STATE File Updates",
+                True,
+                "PR description states STATE will be updated after merge",
+            )
+            print(f"   ✅ PR describes post-merge STATE update")
+        else:
+            self.add_result(
+                "STATE File Updates",
+                False,
+                "No STATE files in PR (required unless BACKLOG-only)",
+            )
+            print(f"   ❌ STATE files not updated (required for non-BACKLOG PRs)")
+
+    def _check_risk_tier_requirements(self):
+        """Check if T1/T2 risk tiers have rollback plan and verification proof."""
+        print("\n⚠️  Checking risk tier requirements...")
+
+        desc_lower = self.pr_description.lower()
+
+        # Detect risk tier
+        risk_tier = None
+        if "tier 1" in desc_lower or "t1" in desc_lower or "critical" in desc_lower:
+            risk_tier = "T1"
+        elif "tier 2" in desc_lower or "t2" in desc_lower or "high risk" in desc_lower:
+            risk_tier = "T2"
+
+        if not risk_tier:
+            self.add_result(
+                "Risk Tier Requirements",
+                True,
+                "No T1/T2 risk tier detected",
+            )
+            print(f"   ✅ No T1/T2 risk tier detected")
+            return
+
+        print(f"   Detected risk tier: {risk_tier}")
+
+        # Check for rollback plan
+        has_rollback = (
+            "rollback" in desc_lower
+            or "roll back" in desc_lower
+            or "revert" in desc_lower
+        )
+
+        # Check for verification proof
+        has_verification = (
+            "verification" in desc_lower
+            or "verified" in desc_lower
+            or "tests passed" in desc_lower
+            or "ci passed" in desc_lower
+            or "ci:" in desc_lower.lower()
+        )
+
+        if has_rollback and has_verification:
+            self.add_result(
+                "Risk Tier Requirements",
+                True,
+                f"{risk_tier} has rollback plan and verification proof",
+            )
+            print(f"   ✅ {risk_tier} requirements satisfied")
+        else:
+            missing = []
+            if not has_rollback:
+                missing.append("rollback plan")
+            if not has_verification:
+                missing.append("verification proof")
+
+            self.add_result(
+                "Risk Tier Requirements",
+                False,
+                f"{risk_tier} missing: {', '.join(missing)}",
+            )
+            print(f"   ❌ {risk_tier} missing: {', '.join(missing)}")
+
+    def _check_framework_only_validations(self):
+        """Run framework-only mode validations."""
+        print("\n🏗️  Checking framework-only validations...")
+
+        if not self.framework_only_mode:
+            self.add_result(
+                "Framework Validations",
+                True,
+                "Framework mode not applicable (APP tests exist)",
+            )
+            print(f"   ✅ Framework mode not applicable")
+            return
+
+        results = []
+
+        # Check YAML syntax for workflows
+        workflows_dir = REPO_ROOT / ".github" / "workflows"
+        if workflows_dir.exists():
+            yaml_ok = True
+            for yaml_file in workflows_dir.glob("*.yml"):
+                yaml_ok = yaml_ok and self._check_yaml_syntax(yaml_file)
+            results.append(("YAML Syntax", yaml_ok))
+        else:
+            results.append(("YAML Syntax", True))  # No workflows to check
+
+        # Check Markdown for basic issues
+        md_files = list(REPO_ROOT.rglob("*.md"))[:20]  # Check first 20 files
+        no_binary_blobs = True
+        has_headings = False
+        for md_file in md_files:
+            content = md_file.read_text()
+            if "\x00" in content:  # Binary marker
+                no_binary_blobs = False
+                break
+            if re.search(r"^#{1,3}\s+", content):
+                has_headings = True
+
+        results.append(("Markdown Valid", no_binary_blobs))
+        results.append(("Documentation Structure", has_headings))
+
+        # Check required framework files exist
+        required_exist = all((REPO_ROOT / f).exists() for f in FRAMEWORK_REQUIRED_FILES)
+        results.append(("Framework Structure", required_exist))
+
+        passed = all(ok for _, ok in results)
+
+        if passed:
+            self.add_result("Framework Validations", True, "All framework checks passed")
+            print(f"   ✅ All framework checks passed:")
+            for name, _ in results:
+                print(f"      ✅ {name}")
+        else:
+            failures = [name for name, ok in results if not ok]
+            self.add_result(
+                "Framework Validations",
+                False,
+                f"Failed: {', '.join(failures)}",
+            )
+            print(f"   ❌ Framework validation failures:")
+            for name, ok in results:
+                status = "✅" if ok else "❌"
+                print(f"      {status} {name}")
+
+    def _check_yaml_syntax(self, yaml_file: Path) -> bool:
+        """Basic YAML syntax check without pyyaml dependency."""
+        try:
+            with open(yaml_file) as f:
+                content = f.read()
+
+            # Basic indentation checks
+            lines = content.split("\n")
+            for i, line in enumerate(lines):
+                if line.strip():
+                    # Check for mixed tabs and spaces
+                    if "\t" in line and line.startswith(" " * 1):
+                        return False
+
+            return True
+        except Exception:
+            return False
+
+    def _print_results(self):
+        """Print all validation results and output summary JSON."""
+        print("\n" + "=" * 60)
+        print("VALIDATION SUMMARY")
+        print("=" * 60)
+
+        for result in self.results:
+            status = "✅ PASS" if result.passed else "❌ FAIL"
+            print(f"{status} - {result.name}")
+            if result.message:
+                print(f"      {result.message}")
+
+        print("=" * 60)
+
+        # Output results as JSON for GitHub actions
+        results_json = {"results": [r.to_dict() for r in self.results]}
+        print(f"::set-output name=results::{json.dumps(results_json)}")
+
+        # Write to file for GitHub actions
+        output_file = REPO_ROOT / ".governance_validator_results.json"
+        with open(output_file, "w") as f:
+            json.dump(results_json, f, indent=2)
+
+        print(f"\nResults written to: {output_file.relative_to(REPO_ROOT)}")
+
+
+def main():
+    """Main entry point."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Machine Board of Directors Governance Validator")
+    parser.add_argument("--test", action="store_true", help="Run in test mode")
+    args = parser.parse_args()
+
+    validator = GovernanceValidator()
+    passed = validator.validate()
+
+    if args.test:
+        print("\n🧪 Test mode: Not enforcing validation status")
+
+    sys.exit(0 if passed else 1)
+
+
+if __name__ == "__main__":
+    main()

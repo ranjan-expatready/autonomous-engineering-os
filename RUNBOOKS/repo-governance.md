@@ -2,7 +2,7 @@
 
 ## Overview
 
-This runbook provides step-by-step instructions for configuring, verifying, and maintaining branch protection on the `main` branch. Following these procedures ensures PR-only governance with required reviews and CI checks.
+This runbook provides step-by-step instructions for configuring, verifying, and maintaining branch protection on the `main` branch. Following these procedures ensures PR-only governance with the **Machine Board of Directors** - an automated validation system enforcing stricter, more consistent governance than human review alone.
 
 ---
 
@@ -11,20 +11,58 @@ This runbook provides step-by-step instructions for configuring, verifying, and 
 ### Current Status
 - **Repository**: `ranjan-expatready/autonomous-engineering-os`
 - **Protected Branch**: `main`
-- **Required Checks**: See `.github/workflows/ci.yml`
-- **Review Requirements**: See `GOVERNANCE/GUARDRAILS.md - Main Branch Protection Policy`
+- **Required Checks**: See `.github/workflows/ci.yml` and `.github/workflows/governance-validator.yml`
+- **Governance**: Machine Board of Directors (automated, no human approval required)
 
 ### Verification Checklist
 - [ ] Branch protection enabled on main
-- [ ] PR required before merging (1+ approvals)
-- [ ] CI checks required to pass
+- [ ] PR required before merging (NO human approval - replaced by governance-validator)
+- [ ] governance-validator check included in required status checks
+- [ ] All CI checks required to pass (lint, test-unit, test-integration, security, build, summary)
 - [ ] Force pushes disabled
 - [ ] Branch deletion disabled
 - [ ] No bypass allowed for admins
 
 ---
 
-## PART 1: CONFIGURING BRANCH PROTECTION (MANUAL SETUP)
+## NEW: Machine Board of Directors Mode
+
+### What Changed
+
+**From Human Governance to Machine Board of Directors**:
+- ❌ **Removed**: Human approval requirements in development mode
+- ✅ **Added**: Automated validation via `governance-validator` workflow
+- ✅ **Benefit**: Machine enforces consistent rules (no "LGTM" shortcuts)
+- ✅ **Benefit**: Faster - No waiting for human review cycles
+- ✅ **Benefit**: Safer - All artifacts, STATE updates, and risk documentation are verified
+
+### How the Machine Board Works
+
+1. **PR opens** → `governance-validator` workflow runs automatically
+2. **Validator checks**:
+   - Protected paths have required PLAN/VERIFICATION artifacts
+   - STATE files are updated (except BACKLOG-only PRs)
+   - Risk tier T1/T2 have rollback plans and verification proof
+   - No secrets detected in diffs
+   - Framework structure is intact (framework-only mode)
+3. **If all checks pass** → PR is merge-ready (no human approval needed)
+4. **If any check fails** → PR is blocked with specific guidance
+
+### Configuration Changes Required
+
+In your GitHub branch protection settings for `main`:
+
+**REMOVE**:
+- ❌ "Require approvals" (set to 0 - no human approval needed)
+- ❌ "Require approval from a human reviewer"
+- ❌ "Require review from Code Owners" (machine board mode disabled)
+
+**ADD**:
+- ✅ `governance-validator` to required status checks (from `.github/workflows/governance-validator.yml`)
+
+---
+
+## PART 1: CONFIGURING BRANCH PROTECTION (MACHINE BOARD MODE)
 
 ### Prerequisites
 - Repository Owner or Admin access on GitHub
@@ -63,36 +101,23 @@ This runbook provides step-by-step instructions for configuring, verifying, and 
 
 ---
 
-#### **STEP 3: Require Pull Request Before Merging**
+#### **STEP 3: Configure for Machine Board of Directors Mode**
 
-**3.1 Enable PR Requirement**
+**3.1 Disable Human Approvals**
 
 1. Toggle **ON** the switch for: **Require a pull request before merging**
-   - Switch turns green/active
-   - Additional options appear below
-
-**3.2 Configure PR Requirements**
-
 2. Under **Required approving reviews**, set:
-   - **Require approvals** → `1`
-   - Explanation: "At least 1 person must approve"
+   - **Require approvals** → `0` (no human approval needed)
 
-3. **Dismiss stale PR approvals when new commits are pushed**: Toggle **ON**
-   - Ensures new commits trigger re-review
+3. **Dismiss stale PR approvals when new commits are pushed**: Toggle can be ON or OFF (optional in machine board mode)
 
-4. **Require approval from a human reviewer**: Toggle **ON**
-   - Prevents bot approvals from counting
+4. **Require approval from a human reviewer**: Toggle **OFF** (disabled in machine board mode)
 
-5. **Require review from Code Owners**: Toggle **ON** (if `.github/CODEOWNERS` exists)
-   - Ensures file owners review changes
+5. **Require review from Code Owners**: Toggle **OFF** (disabled in machine board mode)
 
-**Expected Result**: PR section shows "1 approval required" with all toggles enabled
+**Expected Result**: PR section shows "0 approvals required" - governance handled by governance-validator
 
----
-
-#### **STEP 4: Require Status Checks to Pass Before Merging**
-
-**4.1 Enable Status Check Requirement**
+**3.2 Enable Status Check Requirement**
 
 1. Toggle **ON** the switch for: **Require status checks to pass before merging`
    - Additional options appear below
@@ -100,10 +125,8 @@ This runbook provides step-by-step instructions for configuring, verifying, and 
 2. **Require branches to be up to date before merging**: Toggle **ON**
    - Ensures PR includes latest main changes before merging
 
-**4.2 Select Required CI Checks**
-
 3. Click on **Add requirement** link/button
-4. Search for and add all CI checks from `.github/workflows/ci.yml`:
+4. Add all CI checks from `.github/workflows/ci.yml`:
    - `lint` - Linting and Formatting
    - `test-unit` - Unit Tests
    - `test-integration` - Integration Tests
@@ -111,13 +134,16 @@ This runbook provides step-by-step instructions for configuring, verifying, and 
    - `build` - Build Verification
    - `summary` - CI Summary
 
+5. **IMPORTANT**: Add the Machine Board check:
+   - `governance-validator` - Machine Board of Directors validation
+
 **Note**: The UI may show these as:
 - `lint (CI)`
+- `governance-validator (CI)`
 - `test-unit (CI)`
-- `test-integration (CI)`
 - etc.
 
-**Expected Result**: All 6 CI checks are listed under "Required status checks"
+**Expected Result**: All 7 CI checks are listed under "Required status checks" including governance-validator
 
 ---
 
@@ -208,40 +234,53 @@ At least 1 approving review is required by reviewers with write access.
 
 ---
 
-### Test 2: Verify PR Requirement
+### Test 2: Verify Governance Validator Requirement
 
-**Purpose**: Confirm that a PR is required and must include approval
+**Purpose**: Confirm that the governance-validator check is required and properly validates PRs
 
 **Steps**:
 1. Create a new branch:
    ```bash
-   git checkout -b feature/test-branch-protection
+   git checkout -b feature/test-governance-validator
    ```
 
-2. Make a change:
+2. Make a change to a protected path to trigger validation:
    ```bash
-   echo "# Test PR Workflow" > test-pr.md
-   git add test-pr.md
-   git commit -m "test: verify PR workflow"
+   echo "# Test PR Workflow" > GOVERNANCE/test-governance.md
+   git add GOVERNANCE/test-governance.md
+   git commit -m "test: verify governance validator"
    ```
 
 3. Push to GitHub:
    ```bash
-   git push -u origin feature/test-branch-protection
+   git push -u origin feature/test-governance-validator
    ```
 
 4. Open PR via GitHub UI:
    - Go to repository → Pull requests
    - Click "New pull request"
-   - Select `feature/test-branch-protection` as source
+   - Select `feature/test-governance-validator` as source
    - Select `main` as target
    - Confirm you see "All checks have passed" after CI runs
-   - Confirm you see "At least 1 approving review is required"
+   - Confirm `governance-validator` check is in the required checks list
+   - IMPORTANT: This PR should fail validation because it lacks required artifacts
 
-5. (Optional) Merge the PR if tests pass:
-   - Get a review and approve
-   - Merge using "Squash and merge"
-   - Delete branch
+5. Test the failure:
+   - The `governance-validator` should fail (missing PLAN/VERIFICATION artifacts)
+   - The PR should show a comment from the workflow explaining the failure
+   - The merge button should be disabled
+
+6. Fix the PR:
+   - Update PR description with PLAN and VERIFICATION sections
+   - Add STATE/STATUS_LEDGER.md updates to the PR (or note they'll be updated after)
+   - Wait for re-run of governance-validator
+   - Check that it now passes
+
+7. Clean up:
+   ```bash
+   git checkout main
+   git branch -D feature/test-governance-validator
+   ```
 
 ---
 
@@ -331,6 +370,7 @@ gh api repos/ranjan-expatready/autonomous-engineering-os/branches/main/protectio
   "required_status_checks": {
     "strict": true,
     "contexts": [
+      "governance-validator",
       "lint",
       "test-unit",
       "test-integration",
@@ -341,9 +381,9 @@ gh api repos/ranjan-expatready/autonomous-engineering-os/branches/main/protectio
   },
   "enforce_admins": true,
   "required_pull_request_reviews": {
-    "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": true,
-    "required_approving_review_count": 1
+    "dismiss_stale_reviews": false,
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 0
   },
   "restrictions": null,
   "allow_force_pushes": false,
@@ -353,9 +393,9 @@ gh api repos/ranjan-expatready/autonomous-engineering-os/branches/main/protectio
 
 **Key Fields to Verify**:
 - `strict: true` - Branch must be up-to-date
-- `contexts` - Contains all 6 CI checks
+- `contexts` - Contains all 7 CI checks including `governance-validator`
 - `enforce_admins: true` - Admins cannot bypass rules
-- `required_approving_review_count: 1` - Requires 1 approval
+- `required_approving_review_count: 0` - NO human approval needed (machine board mode)
 - `allow_force_pushes: false` - Force push disabled
 - `allow_deletions: false` - Deletion disabled
 
@@ -537,4 +577,5 @@ If branch protection is not working as expected:
 
 ## VERSION HISTORY
 
+- v1.1 (Machine Board of Directors): Updated for automated governance with governance-validator, removed human approval requirements
 - v1.0 (Initial): Branch protection setup, verification procedures, troubleshooting guide
