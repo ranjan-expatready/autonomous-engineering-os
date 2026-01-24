@@ -698,17 +698,17 @@ If STATE files are NOT in PR:
 
 ---
 
-## MAIN BRANCH PROTECTION POLICY
+## MAIN BRANCH PROTECTION POLICY — Machine Board of Directors
 
 ### Overview
 
-This section defines the mandatory branch protection rules for the `main` branch. These rules enforce PR-only governance, ensuring all changes go through proper review and validation before merging to main.
+This section defines the mandatory branch protection rules for the `main` branch. These rules enforce PR-only governance powered by the **Machine Board of Directors** - an automated validation system that enforces stricter, more consistent governance than human review alone.
 
 ### Core Principle
 
 **DIRECT PUSHES TO MAIN ARE FORBIDDEN.**
 
-All changes to the `main` branch MUST occur through pull requests with required reviews and checks.
+All changes to the `main` branch MUST occur through pull requests with the **governance-validator** status check passing.
 
 ### Required Branch Protection Settings
 
@@ -718,15 +718,63 @@ The following settings MUST be configured on the `main` branch in GitHub:
 **Setting**: Enable "Require a pull request before merging"
 
 **Requirements**:
-- Require at least 1 approving review before merging
-- Dismiss stale PR approvals when new commits are pushed
-- Require approval from a human reviewer (not automated)
-- Require review from CODEOWNERS when defined
+- Dismiss stale PR approvals when new commits are pushed (optional, not needed)
+- **NO human approval required** - replaced by governance-validator
+- Require review from CODEOWNERS when defined (disabled in machine board mode)
+
+### Machine Board of Directors
+
+**NEW GOVERNANCE MODEL**: The Autonomous Engineering OS uses automated governance enforcement instead of human approvals.
+
+**What Changed**:
+- ❌ **Removed**: Human approval requirements in development mode
+- ✅ **Added**: Automated validation via `governance-validator` workflow
+- ✅ **Stronger**: Machine enforces consistent rules (no "LGTM" shortcuts)
+- ✅ **Faster**: No waiting for human review cycles
+- ✅ **Safer**: All artifacts, STATE updates, and risk documentation are verified
+
+**How It Works**:
+1. PR opens → `governance-validator` workflow runs automatically
+2. Validator checks:
+   - Protected paths have required PLAN/VERIFICATION artifacts
+   - STATE files are updated (except BACKLOG-only PRs)
+   - Risk tier T1/T2 have rollback plans and verification proof
+   - No secrets detected in diffs
+   - Framework structure is intact (framework-only mode)
+3. If all checks pass → PR is merge-ready (no human approval needed)
+4. If any check fails → PR is blocked with specific guidance
+
+**Validator Checks**:
+
+**Check 1: Protected Path Artifacts**
+- Protected paths: `GOVERNANCE/**`, `AGENTS/**`, `COCKPIT/**`, `.github/workflows/**`, `STATE/**`
+- Required artifact sections:
+  - **PLAN**: scope, risk tier, cost estimate, verification plan, rollback plan
+  - **VERIFICATION**: tests run, results, CI links, screenshots
+  - **STATE**: STATUS_LEDGER.md and LAST_KNOWN_STATE.md updates
+
+**Check 2: STATE File Updates**
+- Required for non-BACKLOG PRs
+- Exceptions: BACKLOG-only PRs can skip STATE
+
+**Check 3: Risk Tier Requirements**
+- T1/T2 require rollback plan + verification proof
+- Detected from PR description (Tier 1, T1, Critical, Tier 2, T2, High Risk)
+
+**Check 4: Secret Detection**
+- Forbidden patterns: `password=`, `api_key=`, `secret=`, `BEGIN PRIVATE KEY`
+- Blocks PRs with potential credentials
+
+**Check 5: Framework Validations** (framework-only mode)
+- YAML syntax validation for workflows
+- Markdown basic lint (headings, no binary blobs)
+- Repo structure validation (required framework files exist)
 
 #### 2. Require Status Checks to Pass Before Merging
 **Setting**: Enable "Require status checks to pass before merging"
 
-**Required Checks** (from `.github/workflows/ci.yml`):
+**Required Checks** (from `.github/workflows/ci.yml` and `.github/workflows/governance-validator.yml`):
+- `governance-validator` - Machine Board of Directors validation
 - `lint` - Linting and Formatting checks
 - `test-unit` - Unit Tests
 - `test-integration` - Integration Tests
@@ -736,7 +784,7 @@ The following settings MUST be configured on the `main` branch in GitHub:
 
 **Additional Settings**:
 - Require branches to be up to date before merging
-- Require approval from all code owners when available
+- Require approval from all code owners when available (disabled in machine board mode)
 
 #### 3. Disallow Force Pushes to Main
 **Setting**: Enable "Do not allow bypassing the above settings"
@@ -755,190 +803,47 @@ The following settings MUST be configured on the `main` branch in GitHub:
 - `git push origin --delete main` is blocked
 - Prevents accidental or malicious branch removal
 
-### Review Requirements by Directory
+### Validation Requirements by Directory
 
-Different directories require different levels of approval:
+**MACHINE BOARD MODE**: All directories are now governed by automated validation instead of human review.
 
-#### High-Risk Directories (Require Human Approval - 1 reviewer minimum)
+#### Protected Governance Paths (Require Artifacts)
 
-Changes to the following directories **MUST** receive at least 1 human approval:
+Changes to the following directories **MUST** include proper artifacts in the PR description:
 
 ```
 GOVERNANCE/           # Governance policies (guardrails, cost policy, risk tiers)
 AGENTS/               # Agent contracts, roles, best practices, prompt templates
+COCKPIT/              # Cockpit integration and skills policy
 .github/workflows/    # CI/CD workflows and automation
+STATE/                # State ledger and last known state
 ```
 
-**Rationale**: These directories define the operating rules, agent behaviors, and automated processes. Changes here can fundamentally alter how the Autonomous Engineering OS operates.
+**Required Artifacts**:
+- **PLAN section**: scope, risk tier, cost estimate, verification plan, rollback plan
+- **VERIFICATION section**: tests run, results, CI links, screenshots
+- **STATE updates**: STATUS_LEDGER.md and LAST_KNOWN_STATE.md documented
 
-#### Medium-Risk Directories (Automated Review or 1 reviewer)
+**Rationale**: These directories define the operating rules, agent behaviors, and automated processes. The machine validator ensures all changes are properly documented with artifacts, providing stronger governance than human review alone.
 
-Changes to these directories may proceed with automated checks or require 1 reviewer:
+#### All Other Paths (Standard Validation)
 
-```
-FRAMEWORK_KNOWLEDGE/  # Technical knowledge base
-ARCHITECTURE/         # System architecture documentation
-PRODUCT/              # Product specifications and requirements
-RUNBOOKS/             # Operational procedures
-```
-
-**Rationale**: These directories contain knowledge and documentation but have less operational impact than governance files.
-
-#### Low-Risk Directories (Automated Review Only)
-
-Changes in these directories require only CI checks to pass:
+Changes to other directories require:
+- ✅ CI checks passing (lint, test, security, build)
+- ✅ governance-validator passing (verifies no secrets, structure intact)
+- ✅ STATE files updated (unless BACKLOG-only)
 
 ```
-APP/                  # Application code (when populated)
-COMPLETION_STATUS.md  # Project progress tracking
-INITIALIZATION_SUMMARY.md  # Project initialization records
-README.md             # Project documentation
+APP/**                  # Application code (when populated)
+PRODUCT/**              # Product specifications, requirements
+BACKLOG/**              # Backlog items, task definitions, tickets
+FRAMEWORK_KNOWLEDGE/**  # Technical knowledge base
+ARCHITECTURE/**         # System architecture documentation
+RUNBOOKS/**             # Operational procedures
+Any other paths         # Documentation, artifacts, etc.
 ```
 
-**Rationale**: Application code follows standard software engineering practices with automated testing and quality gates.
-
----
-
-### Dev Stage Fast Mode
-
-**Purpose**: Enable rapid development iterations for low-risk changes while maintaining safety for core governance and infrastructure.
-
-#### Core Principle
-
-**Speed with Safety**: Low-risk changes can merge autonomously with CI passing, while governance and infrastructure changes retain human review requirements.
-
-#### Directory-Based Auto-Merge Rules
-
-**Auto-Merge with CI Only** (No Human Review Required):
-
-Changes in the following directories can merge automatically when all CI checks pass:
-
-```
-APP/**                # Application code (features, bug fixes, refactors)
-PRODUCT/**            # Product specifications, requirements, user stories
-BACKLOG/**            # Backlog items, task definitions, tickets
-FRAMEWORK_KNOWLEDGE/** # Technical knowledge and best practices
-ARCHITECTURE/**       # Architecture documentation
-RUNBOOKS/**           # Operational procedures and guides
-```
-
-**Requirements for Auto-Merge**:
-- All CI checks must pass (lint, test-unit, test-integration, security, build)
-- Unit tests for new features must exist (see QUALITY_GATES.md)
-- Coverage meets current stage threshold (see QUALITY_GATES.md)
-- No breaking changes to public APIs (auto-detected)
-- No integration with new external services (auto-detected)
-
-**Review**: Optional (bot or human can review at discretion)
-
----
-
-**Human Approval Required** (1 Reviewer Minimum):
-
-Changes in the following directories **MUST** receive human approval before merging:
-
-```
-GOVERNANCE/**          # Governance policies, guardrails, cost policy, risk tiers
-AGENTS/**              # Agent contracts, roles, best practices, prompt templates
-.github/workflows/**   # CI/CD workflows and automation
-```
-
-**Rationale**: These directories define the core operating rules, agent behaviors, and automated execution policies. Changes here fundamentally alter how the Autonomous Engineering OS operates and require human judgment.
-
-**Requirements**:
-- All CI checks must pass
-- At least 1 human reviewer approval
-- Changes to GOVERNANCE/ require explicit Founder/CTO approval
-- Changes to AGENTS/ require explicit review of agent behavior impact
-- Changes to .github/workflows/ require explicit review of CI/CD impact
-
----
-
-#### Risk Tier Overrides
-
-**Regardless of directory**, human approval is **ALWAYS REQUIRED** for:
-
-**Tier 1 (Critical) Changes**:
-- Production deployment (GATE-3)
-- Security credential usage
-- Payment processing changes
-- Database migration on production
-- Breaking API changes
-
-**Tier 2 (High) Changes**:
-- Database schema changes (DDL)
-- External API integration (new third-party service)
-- Major dependency upgrades
-- Infrastructure changes with cost impact
-
-**Rationale**: Certain changes carry inherent risk regardless of which directory they touch. Risk tier classification takes precedence over directory-based rules.
-
----
-
-#### Risk-Based Approval Matrix
-
-| Directory Path | T0 (Info) | T3 (Low Risk) | T2 (High Risk) | T1 (Critical) |
-|----------------|-----------|---------------|----------------|---------------|
-| APP/** | N/A | Auto-Merge (CI only) | Auto-Merge (CI only) | Human Approval Required |
-| PRODUCT/** | Auto-Merge | Auto-Merge (CI only) | Auto-Merge (CI only) | Human Approval Required |
-| BACKLOG/** | Auto-Merge | Auto-Merge (CI only) | Auto-Merge (CI only) | Human Approval Required |
-| FRAMEWORK_KNOWLEDGE/** | Auto-Merge | Auto-Merge (CI only) | Human Approval Required | Human Approval Required |
-| ARCHITECTURE/** | Auto-Merge | Auto-Merge (CI only) | Human Approval Required | Human Approval Required |
-| RUNBOOKS/** | Auto-Merge | Auto-Merge (CI only) | Human Approval Required | Human Approval Required |
-| GOVERNANCE/** | Auto-Merge | Human Approval Required | Human Approval Required | Human Approval Required |
-| AGENTS/** | Auto-Merge | Human Approval Required | Human Approval Required | Human Approval Required |
-| .github/workflows/** | N/A | Human Approval Required | Human Approval Required | Human Approval Required |
-
-**Legend**:
-- **Auto-Merge**: Merges automatically when CI passes (no review)
-- **Auto-Merge (CI only)**: Merges automatically when CI passes (optional review)
-- **Human Approval Required**: Requires at least 1 human review before merge
-
----
-
-#### Implementation Notes
-
-**Bot Configuration** (Future Enhancement):
-- Configure GitHub bot to auto-merge eligible PRs when CI passes
-- Use GitHub's Auto-merge feature with required status checks
-- Optional: Configure CODEOWNERS to auto-approve designated directories
-
-**Coverage Requirements**:
-- See `GOVERNANCE/QUALITY_GATES.md` for staged coverage requirements
-- Current stage enforces coverage thresholds before auto-merge
-
-**Safety Checks**:
-- System will auto-detect if change touches multiple directories
-- If change spans both auto-merge and approval-required paths → Approval required
-- Risk tier classification always overrides directory rules when higher-risk
-
----
-
-#### Monitoring and Audit
-
-**Metrics to Track**:
-- Auto-merged PRs count vs. manually reviewed PRs
-- Failure rate of auto-merged PRs (CI failures, regressions)
-- Risk tier distribution of merged PRs
-- Directory distribution of merged PRs
-- Average time from PR creation to merge (auto vs manual)
-
-**Alerts**:
-- Spike in auto-merged PR failures (indicates weak CI)
-- Auto-merge attempts on governance directories (blocked by policy)
-- High-risk changes bypassing review (policy violation)
-
----
-
-#### Transition Process
-
-**If Dev Fast Mode is Disabled**:
-All changes revert to requiring human approval regardless of directory.
-
-To enable/disable Dev Fast Mode:
-1. Update this section policy
-2. Configure or disable GitHub auto-merge rules
-3. Document change in governance changelog
+**Rationale**: Application code and documentation changes follow standard software engineering practices with automated testing. The machine validator enforces consistent standards without human bottlenecks.
 
 ---
 
@@ -1159,6 +1064,7 @@ Adding or removing MCP servers requires:
 
 ## Version History
 
+- v1.4 (Machine Board of Directors): Replaced human approvals with automated governance-validator for all PRs; stronger, faster, safer
 - v1.3 (Dev Fast Mode): Added Dev Stage Fast Mode for directory-based auto-merge with CI
 - v1.2 (Branch Protection): Added Main Branch Protection Policy and PR-only enforcement
 - v1.1 (MCP Integration): Added MCP Usage Rules for filesystem, fetch, and docs servers
