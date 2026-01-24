@@ -1,4 +1,4 @@
-name: Governance Validator — Machine Board of Directors
+name: governance-validator
 
 # Pull Request Governance Enforcement
 # This workflow enforces automated governance on all pull requests.
@@ -13,8 +13,7 @@ on:
 workflow_dispatch:
 
 jobs:
-  governance-validator:
-    name: Machine Board Validation
+  governance:
     runs-on: ubuntu-latest
 
     steps:
