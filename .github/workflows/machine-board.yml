@@ -51,7 +51,7 @@ jobs:
 
       - name: Upload validation results
         if: always() && github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: governance-validator-results
           path: .governance_validator_results.json
