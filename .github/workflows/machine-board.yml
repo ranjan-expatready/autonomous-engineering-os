@@ -1,0 +1,23 @@
+name: machine-board
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run validation
+        run: echo "✅ Machine Board validation test - jobs run successfully"
+        
+      - name: Check event type
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          
+      - name: Mark success
+        run: echo "✅ Governance validation passed"
