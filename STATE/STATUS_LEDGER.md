@@ -247,11 +247,11 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
 
 | Date | Milestone | Artifact | Success |
 |------|-----------|----------|---------|
+| 2026-01-24 | Operating Manual Published | RUNBOOKS/OPERATING_MANUAL.md | ✅ |
 | 2026-01-24 | Machine Board Governance Activated | MACHINE_BOARD_ACTIVATION_ARTIFACT.md | ✅ |
 | 2026-01-24 | Machine Board Proof Test | PR #7 merged | ✅ |
 | 2026-01-24 | Machine Board Implementation | PR #6 merged | ✅ |
 | 2026-01-23 | Framework Finalization | FRAMEWORK_LOCKED_ARTIFACT.md | ✅ |
-| 2026-01-23 | Antigravity Cockpit Integration | PR #4 merged | ✅ |
 
 ---
 
@@ -289,6 +289,7 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
 
 | Timestamp | Updated By | What Changed | Files Modified |
 |-----------|------------|--------------|----------------|
+| 2026-01-24 17:05 | CTO Agent | Operating Manual published | Created RUNBOOKS/OPERATING_MANUAL.md, updated STATUS_LEDGER.md |
 | 2026-01-23 15:30 | CTO Agent | Framework initialization complete | Updated STATUS_LEDGER.md |
 | 2026-01-23 11:58 | CTO Agent | Merged PR #4 (Cockpit integration) | Multiple files |
 | 2026-01-23 11:58 | CTO Agent | Merged PR #3 (Auto-resume) | STATE/, AGENTS/, RUNBOOKS/ |
@@ -322,6 +323,6 @@ The Autonomous Engineering OS framework is now complete with:
 
 ---
 
-**Last Updated**: 2026-01-23 15:30 UTC by CTO Agent
-**State Ledger Version**: v1.1
+**Last Updated**: 2026-01-24 17:05 UTC by CTO Agent
+**State Ledger Version**: v1.2
 **Framework Status**: INITIALIZED ✅

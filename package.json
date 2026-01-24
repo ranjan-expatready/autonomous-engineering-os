@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@arabold/docs-mcp-server": "^1.36.0"
+  }
+}
