@@ -4,6 +4,11 @@ name: machine-board
 # This workflow enforces automated governance on all pull requests.
 # PRs must pass all validation checks before merge is allowed.
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
