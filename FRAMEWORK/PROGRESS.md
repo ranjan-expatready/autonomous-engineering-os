@@ -86,6 +86,60 @@ Single source of truth for Autonomous Engineering OS framework implementation pr
 
 ---
 
+### ✅ Trae Integration — Mandatory External Reviewer
+
+**Status**: COMPLETE ✅
+**Completed**: 2026-01-25
+**Evidence**: PR for Trae integration (see FRAMEWORK/EVIDENCE_INDEX.md)
+
+**Deliverables**:
+- ✅ AGENTS/TRAE.md - Trae agent definition, scope, isolation policy
+- ✅ COCKPIT/artifacts/TRAE_REVIEW/ - New artifact type for Trae reviews
+- ✅ RUNBOOKS/trae-review.md - Invocation and protocol for Trae
+- ✅ .github/workflows/trae-review-validator.yml - PR checks workflow
+- ✅ scripts/governance_validator.py - Added Trae review validation
+- ✅ COCKPIT/ARTIFACT_TYPES.md - Added TRAE_REVIEW artifact section
+- ✅ RUNBOOKS/branch-protection-checklist.md - Updated with Trae check
+- ✅ Trae replaces human approval for T1-T2 changes (enforced by Machine Board)
+
+**Trae's Role**:
+- **Mandatory external reviewer** for all T1-T4 changes
+- **Read-only** (zero write access, advisory-only)
+- **Security and policy validation** before merge
+- **Enforced by machine-board** (not trust-based)
+
+**T1-T4 Changes Requiring Trae Review**:
+- PRs touching protected paths: GOVERNANCE/, AGENTS/, COCKPIT/, .github/workflows/, STATE/
+- PRs labeled as T1 (critical) or T2 (high-risk)
+- PRs with T1/T2 risk tier in description
+
+**Governance Enforcement**:
+- ✅ Machine Board validates TRAE_REVIEW artifact exists
+- ✅ Artifact verdict must be "APPROVE" or "EMERGENCY_OVERRIDE"
+- ✅ Artifact freshness check (< 7 days old)
+- ✅ Emergency override flag supported with documentation
+- ✅ Branch protection requires "trae-review" status check pass
+
+**Files**: `AGENTS/TRAE.md`, `RUNBOOKS/trae-review.md`, `.github/workflows/trae-review-validator.yml`, `scripts/governance_validator.py` (updated)
+
+**Trae + Machine Board Integration**:
+```
+Factory invokes Trae for T1-T4 PR → Trae returns verdict (APPROVE/REJECT/REQUEST_CHANGES)
+→ Factory creates TRAE_REVIEW artifact → Machine Board validates artifact exists and verdict=APPROVE
+→ Branch protection blocks/rejects/allows merge
+```
+
+**Key Features**:
+- Emergency override for when Trae is unavailable
+- Post-merge review requirement for emergency overrides
+- Automatic revalidation when PR is updated (new commit)
+- No human approvals required Trae (Machine Board enforces)
+
+**Blockers Cleared**:
+- None - Trae integration complete and operational
+
+---
+
 ### ✅ Resume & State Management
 
 **Status**: COMPLETE

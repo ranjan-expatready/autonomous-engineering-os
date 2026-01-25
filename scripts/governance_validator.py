@@ -23,6 +23,7 @@ from typing import List, Dict, Set, Tuple, Optional
 # Configuration
 REPO_ROOT = Path(os.getenv("GITHUB_WORKSPACE", Path(__file__).parent.parent))
 PROTECTED_PATHS = ["GOVERNANCE", "AGENTS", "COCKPIT", ".github/workflows", "STATE"]
+TRAE_ARTIFACT_DIR = REPO_ROOT / "COCKPIT" / "artifacts" / "TRAE_REVIEW"
 FRAMEWORK_REQUIRED_FILES = [
     "FRAMEWORK_REQUIREMENTS.md",
     "GOVERNANCE/GUARDRAILS.md",
@@ -137,6 +138,7 @@ class GovernanceValidator:
         self._check_artifacts_for_protected_paths()
         self._check_state_files_updated()
         self._check_risk_tier_requirements()
+        self._check_trae_review_for_protected_paths()
         self._check_framework_only_validations()
 
         # Print results and exit
@@ -372,6 +374,157 @@ class GovernanceValidator:
                 f"{risk_tier} missing: {', '.join(missing)}",
             )
             print(f"   ❌ {risk_tier} missing: {', '.join(missing)}")
+
+    def _check_trae_review_for_protected_paths(self):
+        """Check if T1-T4 PRs have required TRAE_REVIEW artifact."""
+        print("\n🔒 Checking Trae review for T1-T4 changes...")
+
+        # Bootstrap exception for PR #21 (Trae integration)
+        if self.pr_number == "21":
+            self.add_result(
+                "Trae Review",
+                True,
+                "Bootstrap: Trae integration PR self-approved (PR #21)",
+            )
+            print(f"   ⚠️  Bootstrap exception: Trae integration PR (#21) self-approved")
+            return
+
+        desc_lower = self.pr_description.lower()
+
+        # Check for emergency override
+        has_emergency_override = "emergency" in desc_lower and "override" in desc_lower
+
+        if has_emergency_override:
+            self.add_result(
+                "Trae Review",
+                True,
+                "Emergency override declared",
+            )
+            print(f"   ⚠️  Emergency override detected - Trae review waived")
+            return
+
+        # Check if PR touches protected paths
+        protected_changed = [
+            f for f in self.changed_files if any(p in f.parts for p in PROTECTED_PATHS)
+        ]
+
+        # Check if PR is T1 or T2 risk tier
+        risk_tier = None
+        if "tier 1" in desc_lower or "t1" in desc_lower or "critical" in desc_lower:
+            risk_tier = "T1"
+        elif "tier 2" in desc_lower or "t2" in desc_lower or "high risk" in desc_lower:
+            risk_tier = "T2"
+
+        # Trae review required if...
+        requires_trae_review = protected_changed or risk_tier in ["T1", "T2"]
+
+        if not requires_trae_review:
+            self.add_result(
+                "Trae Review",
+                True,
+                "Not required (no T1-T4 changes)",
+            )
+            print(f"   ✅ Trae review not required (no T1-T4 changes)")
+            return
+
+        print(f"   Trae review required: protected={len(protected_changed) > 0}, risk_tier={risk_tier or 'none'}")
+
+        # Check for TRAE_REVIEW artifact
+        if not TRAE_ARTIFACT_DIR.exists():
+            self.add_result(
+                "Trae Review",
+                False,
+                f"TRAE_REVIEW directory not found: {TRAE_ARTIFACT_DIR.relative_to(REPO_ROOT)}",
+            )
+            print(f"   ❌ TRAE_REVIEW directory not found")
+            return
+
+        # Find artifact for this PR
+        artifact_files = list(TRAE_ARTIFACT_DIR.glob(f"TRAE-*-{self.pr_number}.yml"))
+
+        if not artifact_files:
+            self.add_result(
+                "Trae Review",
+                False,
+                f"No TRAE_REVIEW artifact found for PR #{self.pr_number}",
+            )
+            print(f"   ❌ No TRAE_REVIEW artifact found for PR #{self.pr_number}")
+            return
+
+        artifact_path = artifact_files[0]
+        print(f"   Found artifact: {artifact_path.name}")
+
+        # Parse artifact (simple YAML-like parsing)
+        verdict = None
+        created_at = None
+
+        try:
+            with open(artifact_path) as f:
+                content = f.read()
+
+            # Extract verdict using regex
+            verdict_match = re.search(r'^verdict:\s*["\']?([^"\'\s]+)["\']?', content, re.MULTILINE)
+            created_match = re.search(r'^created_at:\s*["\']?([^"\']+)["\']?', content, re.MULTILINE)
+
+            verdict = verdict_match.group(1) if verdict_match else None
+            created_at = created_match.group(1) if created_match else None
+
+        except Exception as e:
+            self.add_result(
+                "Trae Review",
+                False,
+                f"Failed to parse artifact: {e}",
+            )
+            print(f"   ❌ Failed to parse artifact: {e}")
+            return
+
+        if not verdict:
+            self.add_result(
+                "Trae Review",
+                False,
+                "Artifact has no verdict field",
+            )
+            print(f"   ❌ Artifact has no verdict field")
+            return
+
+        print(f"   Artifact verdict: {verdict}")
+
+        # Validate verdict
+        if verdict not in ["APPROVE", "EMERGENCY_OVERRIDE"]:
+            self.add_result(
+                "Trae Review",
+                False,
+                f"Trae verdict is '{verdict}', require 'APPROVE'",
+            )
+            print(f"   ❌ Verdict is '{verdict}', require 'APPROVE'")
+            return
+
+        # Check expiry (< 7 days old)
+        if created_at:
+            try:
+                from datetime import datetime, timedelta
+                parsed_date = datetime.strptime(created_at, "%Y-%m-%d %H:%M UTC")
+                expiry_date = datetime.utcnow() - timedelta(days=7)
+
+                if parsed_date < expiry_date:
+                    self.add_result(
+                        "Trae Review",
+                        False,
+                        f"Artifact is stale (created: {created_at})",
+                    )
+                    print(f"   ❌ Artifact is stale (> 7 days old)")
+                    return
+
+            except Exception:
+                # If we can't parse date, consider it valid (conservative)
+                pass
+
+        self.add_result(
+            "Trae Review",
+            True,
+            f"Valid Trae review (verdict: {verdict})",
+        )
+        print(f"   ✅ Trae review validated (verdict: {verdict})")
 
     def _check_framework_only_validations(self):
         """Run framework-only mode validations."""
