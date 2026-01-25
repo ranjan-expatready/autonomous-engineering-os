@@ -653,8 +653,55 @@ All framework components are complete with traceable evidence:
 
 ---
 
+## Trae Enforcement Validation Tests
+
+### Test A: Negative Test (T1 change without Trae artifact - Expected FAIL)
+
+**Objective**: Verify system blocks T1 PRs when TRAE_REVIEW artifact is missing
+
+**PR**: #23
+**URL**: https://github.com/ranjan-expatready/autonomous-engineering-os/pull/23
+**Status**: CLOSED (2026-01-25)
+
+**Check Results**:
+| Check | Status | Expected | Result |
+|-------|--------|----------|--------|
+| Validate Trae Review | ❌ FAILED | ❌ FAILED | ✅ WORKING |
+| machine-board | ❌ FAILED | ✅ PASS | ⚠️ Infra issue |
+
+**Evidence**:
+- Actions Run #21335357058: https://github.com/ranjan-expatready/autonomous-engineering-os/actions/runs/21335357058
+- Trae Review Validator correctly detected T1 change (COCKPIT/ARTIFACT_TYPES.md in protected path)
+- Validator correctly identified Trae review required
+- Validator correctly FAILED with missing TRAE_REVIEW artifact
+- Enforcement actively blocked PR merge ✅
+
+**Test Artifacts**:
+- `STATE/STATUS_LEDGER.md`: Test result recorded
+- `COCKPIT/ARTIFACT_TYPES.md`: Test comment (to be reverted)
+- `.github/workflows/trae-review-validator.yml`: Fixed to use GitHub API for changed files
+
+**Outcome**: ✅ PASSED - Enforcement system correctly blocks T1 PRs without Trae approval
+
+---
+
+### Test B: Positive Test (T1 change with Trae APPROVE artifact - Expected PASS)
+
+**Status**: PENDING
+
+**Objective**: Verify system allows T1 PRs when TRAE_REVIEW artifact is present with APPROVE verdict
+
+**Expected Check Results**:
+| Check | Status | Expected |
+|-------|--------|----------|
+| Validate Trae Review | ✅ PASS | ✅ PASS |
+| machine-board | ✅ PASS | ✅ PASS |
+
+---
+
 ## Version History
 
+- v1.2 (2026-01-25): Trae Enforcement Test A evidence added
 - v1.1 (2026-01-25): SDLC Board automation rules evidence added
 - v1.0 (2026-01-25): GitHub Projects Board evidence added
 - v1.0 (2026-01-25): Initial evidence index, PR #10 evidence added
@@ -662,7 +709,9 @@ All framework components are complete with traceable evidence:
 
 ---
 
-**Last Updated**: 2026-01-25 by CTO Agent
+**Last Updated**: 2026-01-25 by Ops Droid
+**Trae Enforcement Status**: VALIDATING...
+**Validate Trae Review Check**: ✅ WORKING
 **Framework**: STABLE ✅
 **Governance Enforcement**: ACTIVE ✅
 **Machine Board**: OPERATIONAL ✅

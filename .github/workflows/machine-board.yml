@@ -31,6 +31,21 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Get Changed Files
+        id: changed-files
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const files = pr.data.map(f => f.filename).join('\n');
+            console.log('Changed files:', pr.data.length, 'files');
+            return files;
+
       - name: Run Governance Validator
         id: machine-board
         env:
@@ -38,11 +53,13 @@ jobs:
           PR_DESCRIPTION: ${{ github.event.pull_request.body || github.event.head_commit.message }}
           GITHUB_BASE_REF: ${{ github.event.base_ref || github.event.pull_request.base.ref || 'main' }}
           EVENT_NAME: ${{ github.event_name }}
+          CHANGED_FILES: ${{ steps.changed-files.outputs.result }}
         run: |
           echo "🤖 Running Machine Board of Directors Governance Validator"
           echo "Event: $EVENT_NAME"
           echo "PR Number: $PR_NUMBER"
           echo "Base Branch: $GITHUB_BASE_REF"
+          echo "Changed Files: $CHANGED_FILES"
           echo ""
 
           # Skip validation on push events (only for PRs)
@@ -51,6 +68,9 @@ jobs:
             echo "✅ Governance validation passed (skipped)"
             exit 0
           fi
+
+          # Export CHANGED_FILES for Python script
+          export CHANGED_FILES="$CHANGED_FILES"
 
           python scripts/governance_validator.py
 

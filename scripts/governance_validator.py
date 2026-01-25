@@ -80,7 +80,17 @@ class GovernanceValidator:
         self.framework_only_mode = self._is_framework_only_mode()
 
     def _get_changed_files(self) -> List[Path]:
-        """Get list of changed files in the PR from git."""
+        """Get list of changed files in the PR from GitHub API or git."""
+        # First, try to get changed files from GitHub API (via CHANGED_FILES env var)
+        changed_files_env = os.getenv("CHANGED_FILES", "")
+
+        if changed_files_env:
+            # GitHub API provided the files - use them directly
+            files = [Path(f.strip()) for f in changed_files_env.splitlines() if f.strip()]
+            print(f"   Using changed files from GitHub API: {len(files)} files")
+            return files
+
+        # Fallback: try git diff
         try:
             # For pull_request_target, diff against main
             # For pull_request, diff against base branch
@@ -93,6 +103,7 @@ class GovernanceValidator:
                 check=True,
             )
             files = [Path(f.strip()) for f in result.stdout.splitlines() if f.strip()]
+            print(f"   Using changed files from git diff: {len(files)} files")
             return files
         except subprocess.CalledProcessError:
             # Fallback: check if we're checking a specific commit
@@ -105,8 +116,10 @@ class GovernanceValidator:
                     check=True,
                 )
                 files = [Path(f.strip()) for f in result.stdout.splitlines() if f.strip()]
+                print(f"   Using changed files from HEAD^ diff: {len(files)} files")
                 return files
             except subprocess.CalledProcessError:
+                print(f"   Warning: Could not determine changed files")
                 return []
 
     def _is_framework_only_mode(self) -> bool:

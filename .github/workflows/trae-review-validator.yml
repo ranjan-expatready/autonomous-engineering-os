@@ -29,6 +29,21 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Get Changed Files
+        id: changed-files
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const files = pr.data.map(f => f.filename).join('\n');
+            console.log('Changed files:', pr.data.length, 'files');
+            return files;
+
       - name: Run Trae Review Validator
         id: trae-validation
         env:
@@ -38,6 +53,7 @@ jobs:
           PR_LABELS: $${{ join(github.event.pull_request.labels.*.name, ',') }}
           GITHUB_BASE_REF: ${{ github.event.base_ref || github.event.pull_request.base.ref || 'main' }}
           TRAE_ARTIFACT_DIR: COCKPIT/artifacts/TRAE_REVIEW
+          CHANGED_FILES: ${{ steps.changed-files.outputs.result }}
         run: |
           echo "🤖 Running Trae Review Validator"
           echo "Event: pull_request"
@@ -45,6 +61,7 @@ jobs:
           echo "PR Title: $PR_TITLE"
           echo "Base Branch: $GITHUB_BASE_REF"
           echo "Labels: $PR_LABELS"
+          echo "Changed Files: $CHANGED_FILES"
           echo ""
 
           # Skip on push events (shouldn't happen for trigger, but defensive)
@@ -54,13 +71,28 @@ jobs:
             exit 0
           fi
 
-          python - << 'PYEOF'
+          # Export CHANGED_FILES for Python script
+          export CHANGED_FILES="$CHANGED_FILES"
+
+          # Write changed files to a temp file for Python to read
+          echo "$CHANGED_FILES" > /tmp/changed_files.txt
+
+          python - << 'PYEOF' "$CHANGED_FILES"
           import os
           import sys
           import re
           import subprocess
           from pathlib import Path
           from datetime import datetime, timedelta
+
+          # Pass CHANGED_FILES via sys.argv since heredoc doesn't inherit env properly
+          if len(sys.argv) > 1:
+              os.environ['CHANGED_FILES'] = sys.argv[1]
+          else:
+              # Fallback: try reading from temp file
+              temp_file = Path("/tmp/changed_files.txt")
+              if temp_file.exists():
+                  os.environ['CHANGED_FILES'] = temp_file.read_text().strip()
 
           # Configuration
           REPO_ROOT = Path(os.getenv("GITHUB_WORKSPACE", "."))
@@ -71,10 +103,15 @@ jobs:
           pr_number = os.getenv("PR_NUMBER", "")
           pr_labels = os.getenv("PR_LABELS", "")
           pr_description = os.getenv("PR_DESCRIPTION", "")
+          changed_files_env = os.getenv("CHANGED_FILES", "")
 
-          # Get changed files
+          # Get changed files from GitHub API (passed via env var)
           def get_changed_files():
               try:
+                  if changed_files_env:
+                      files = [Path(f.strip()) for f in changed_files_env.splitlines() if f.strip()]
+                      return files
+                  # Fallback: try git diff
                   base_ref = os.getenv("GITHUB_BASE_REF", "main")
                   result = subprocess.run(
                       ["git", "diff", "--name-only", f"{base_ref}...HEAD"],
