@@ -379,9 +379,29 @@ Single source of truth mapping all framework work to concrete evidence: PRs, com
 
 ### GITHUB_PROJECT_SDLC_ARTIFACT.md
 
-**Date**: TBD (post-framework)
+**Date**: 2026-01-25
 
-**Significance**: GitHub Project v2 board for live SDLC tracking (next step)
+**Significance**: GitHub Project v2 board specification for live SDLC tracking
+
+**Status**: 🔄 DOCUMENTATION PREPARED - Awaiting manual project creation
+
+**Reference**: GITHUB_PROJECT_SDLC_ARTIFACT.md
+
+**Evidence**:
+- Documentation updated: `RUNBOOKS/resume-protocol.md` (STEP 4: Check SDLC Board Status)
+- Documentation updated: `STATE/STATUS_LEDGER.md` (milestone added)
+- Documentation updated: `FRAMEWORK/PROGRESS.md` (SDLC Board section added)
+
+**Remaining Work** (Manual):
+- Create GitHub Project v2: "Autonomous Engineering OS — SDLC"
+- Configure custom fields: Type, Risk Tier, Owner, Release
+- Configure 8 Kanban columns: Backlog, Planned, In Progress, In Review (PR Open), Waiting for Approval, Blocked, Ready for Release, Done
+- Configure 7 automation rules
+- Configure 3 views: Founder View, Engineering View, Release View
+
+**Blocker**: GitHub API token missing `project` and `read:project` scopes
+
+**Project URL**: TBD (after manual creation)
 
 ---
 

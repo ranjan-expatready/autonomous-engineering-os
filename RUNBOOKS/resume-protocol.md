@@ -199,7 +199,47 @@ Run this protocol whenever:
 
 ---
 
-### STEP 4: Check CI Status for Active Work
+### STEP 4: Check SDLC Board Status
+
+**Purpose**: Verify the live SDLC state using GitHub Projects v2 board before examining CI.
+
+**Check** (in order):
+
+1. **Open SDLC Board**:
+   ```
+   Navigate to: https://github.com/ranjan-expatready/autonomous-engineering-os/projects/[project-number]
+   View: Founder View (default)
+   ```
+   - Check for any items in "Waiting for Approval"
+   - If items exist: → Transition to WAITING_FOR_HUMAN
+   - Check for any items in "Blocked"
+   - If items exist: → Document blocker, determine if can unblock
+
+2. **Review Risk Distribution**:
+   - Count active items by Risk Tier: T0, T1, T2, T3
+   - If T0/T1 items > 3: Note for prioritization
+   - Identify any high-risk items needing attention
+
+3. **Track Progress**:
+   - Note items in "In Review" - any pending PR merges?
+   - Note items in "Ready for Release" - any pending deploys?
+   - Note items in "In Progress" - verify PRs are linked
+
+4. **Sanity Check**:
+   - Verify SDLC Board state matches STATUS_LEDGER.md state
+   - Any inconsistencies → Investigate and reconcile
+
+**Output**: SDLC Board status:
+- Items awaiting human approval (if any)
+- Blocked items (if any)
+- High-risk work distribution
+- Items at release gate
+
+**Stop Condition**: If SDLC Board shows critical blockers in T0/T1 that cannot be resolved, STOP and report.
+
+---
+
+### STEP 4.5: Check CI Status for Active Work
 
 **Purpose**: Verify CI status for any active PRs or work in progress.
 
@@ -446,13 +486,14 @@ Priority Order:
 1. [ ] Governance doctrine fully read and understood
 2. [ ] Current state (STATUS_LEDGER, LAST_KNOWN_STATE) read and validated
 3. [ ] GitHub state scanned and verified
-4. [ ] CI status checked and validated
-5. [ ] Next priority action determined
-6. [ ] No blockers preventing execution
-7. [ ] Context fully reconstructed from saved state
-8. [ ] Transferred to appropriate state machine position
-9. [ ] First action successfully started or completed
-10. [ ] STATE files updated accurately
+4. [ ] SDLC Board status checked and validated
+5. [ ] CI status checked and validated
+6. [ ] Next priority action determined
+7. [ ] No blockers preventing execution
+8. [ ] Context fully reconstructed from saved state
+9. [ ] Transferred to appropriate state machine position
+10. [ ] First action successfully started or completed
+11. [ ] STATE files updated accurately
 
 ### Resume Completion Checklist:
 
@@ -460,7 +501,8 @@ Priority Order:
 [ ] Step 1: Read governance doctrine - COMPLETE
 [ ] Step 2: Read current state - COMPLETE
 [ ] Step 3: Scan GitHub state - COMPLETE
-[ ] Step 4: Check CI status - COMPLETE
+[ ] Step 4: Check SDLC Board status - COMPLETE
+[ ] Step 4.5: Check CI status - COMPLETE
 [ ] Step 5: Determine next action - COMPLETE
 [ ] Step 6: Verify no blockers - COMPLETE
 [ ] Step 7: Reconstruct context - COMPLETE
