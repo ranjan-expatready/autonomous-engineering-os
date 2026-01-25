@@ -398,6 +398,34 @@ Single source of truth mapping all framework work to concrete evidence: PRs, com
 
 ---
 
+### SDLC_AUTOMATION_VERIFICATION.md
+
+**Date**: 2026-01-25
+
+**Significance**: GitHub Projects v2 automation rules fully documented with UI configuration checklist and verification protocol
+
+**7 Automation Rules Documented**:
+1. Issue Created → Set status to "Backlog"
+2. Issue Assigned → Set status to "Planned"
+3. PR Opened → Find linked issue → Set status to "In Progress"
+4. PR In Review → Set linked issue status to "In Review (PR Open)"
+5. PR Requires Review → Set linked issue status to "Waiting for Approval"
+6. PR Merged → Set linked issue status to "Done"
+7. CI Failed → Find linked issue → Set status to "Blocked"
+
+**Deliverables**:
+- ✅ Step-by-step UI checklist for configuring all 7 automation rules via web UI
+- ✅ Verification protocol using test issue + test PR workflow
+- ✅ Expected state transitions documented for each rule
+- ✅ Troubleshooting guide for common automation issues
+- ✅ Success criteria defined for automation configuration completion
+
+**Estimated Configuration Time**: 15-20 minutes via web UI
+
+**Note**: Automation rules require manual configuration via GitHub Projects web UI (GraphQL API does not support automation rule configuration)
+
+---
+
 ## Files → Evidence Mapping
 
 ### `.github/workflows/machine-board.yml`
@@ -491,6 +519,7 @@ All framework components are complete with traceable evidence:
 
 ## Version History
 
+- v1.1 (2026-01-25): SDLC Board automation rules evidence added
 - v1.0 (2026-01-25): GitHub Projects Board evidence added
 - v1.0 (2026-01-25): Initial evidence index, PR #10 evidence added
 - v1.0 (2026-01-24): Machine Board activation artifacts
