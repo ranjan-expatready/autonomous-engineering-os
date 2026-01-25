@@ -17,7 +17,7 @@ on:
     branches: [main]
 
 jobs:
-  governance:
+  machine-board:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,7 +32,7 @@ jobs:
           python-version: '3.11'
 
       - name: Run Governance Validator
-        id: govern
+        id: machine-board
         env:
           PR_NUMBER: ${{ github.event.number }}
           PR_DESCRIPTION: ${{ github.event.pull_request.body || github.event.head_commit.message }}
@@ -111,12 +111,12 @@ jobs:
             }
 
       - name: Fail if validation failed
-        if: steps.govern.outcome == 'failure'
+        if: steps.machine-board.outcome == 'failure'
         run: |
           echo "❌ Governance validation failed"
           echo "Please fix the validation errors and push a new commit."
           exit 1
 
       - name: Mark as passed
-        if: steps.govern.outcome == 'success'
+        if: steps.machine-board.outcome == 'success'
         run: echo "✅ Governance validation passed"
