@@ -54,11 +54,9 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
 
 ## Active Tests
 
-### Ongoing Tests (Ordered by Priority)
+### Active Tests
 
-| Test Name | Purpose | Risk Tier | Status | Expected Outcome |
-|-----------|---------|-----------|--------|------------------|
-| Trae Enforcement Test B (Positive) | Validate T1 change passes with Trae APPROVE artifact | T1 | PENDING | PASS - Both checks should green |
+**No active tests**
 
 ---
 
@@ -68,6 +66,7 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
 
 | Test Name | Purpose | Risk Tier | Status | Outcome | Evidence |
 |-----------|---------|-----------|--------|---------|----------|
+| Trae Enforcement Test B (Positive) | Validate T1 change passes with Trae APPROVE artifact | T1 | ✅ COMPLETE | EXPECTED PASS ✅ | PR #25, Run #21337337080, Run #21337337094 |
 | Trae Enforcement Test A (Negative) | Validate T1 change blocked without Trae artifact | T1 | ✅ COMPLETE | EXPECTED FAIL ✅ | PR #23, Run #21335357058 |
 
 ---
