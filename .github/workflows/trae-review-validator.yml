@@ -77,7 +77,7 @@ jobs:
           # Write changed files to a temp file for Python to read
           echo "$CHANGED_FILES" > /tmp/changed_files.txt
 
-          python - << 'PYEOF'
+          python - << 'PYEOF' "$CHANGED_FILES"
           import os
           import sys
           import re
@@ -85,10 +85,14 @@ jobs:
           from pathlib import Path
           from datetime import datetime, timedelta
 
-          # Read CHANGED_FILES from temp file (heredoc env var workaround)
-          temp_file = Path("/tmp/changed_files.txt")
-          if temp_file.exists():
-              os.environ['CHANGED_FILES'] = temp_file.read_text().strip()
+          # Pass CHANGED_FILES via sys.argv since heredoc doesn't inherit env properly
+          if len(sys.argv) > 1:
+              os.environ['CHANGED_FILES'] = sys.argv[1]
+          else:
+              # Fallback: try reading from temp file
+              temp_file = Path("/tmp/changed_files.txt")
+              if temp_file.exists():
+                  os.environ['CHANGED_FILES'] = temp_file.read_text().strip()
 
           # Configuration
           REPO_ROOT = Path(os.getenv("GITHUB_WORKSPACE", "."))
