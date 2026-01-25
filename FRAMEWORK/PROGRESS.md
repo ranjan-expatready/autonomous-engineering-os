@@ -138,6 +138,11 @@ Factory invokes Trae for T1-T4 PR → Trae returns verdict (APPROVE/REJECT/REQUE
 **Blockers Cleared**:
 - None - Trae integration complete and operational
 
+**Validation Tests**
+- ✅ Test A (Negative): PR #23 - T1 change without Trae artifact correctly blocked (2026-01-25)
+- ✅ Test B (Positive): PR #25 - T1 change with Trae APPROVE artifact correctly allowed (2026-01-25)
+- Evidence: FRAMEWORK/EVIDENCE_INDEX.md - Trae Enforcement Validation Tests section
+
 ---
 
 ### ✅ Resume & State Management
