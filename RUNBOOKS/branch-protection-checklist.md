@@ -56,8 +56,12 @@
 - [ ] Search and add: `build`
 - [ ] Click **Add requirement**
 - [ ] Search and add: `summary`
+- [ ] Click **Add requirement**
+- [ ] Search and add: `machine-board` (Machine Board governance validator)
+- [ ] Click **Add requirement**
+- [ ] Search and add: `trae-review` (Trae external reviewer validator)
 
-**Total Required Checks**: 6 (lint, test-unit, test-integration, security, build, summary)
+**Total Required Checks**: 8 (lint, test-unit, test-integration, security, build, summary, machine-board, trae-review)
 
 ---
 
@@ -154,10 +158,45 @@ git branch -D test-branch-protection
 | Require Code Owner Review | ✅ ON |
 | Require Status Checks | ✅ ON |
 | Branch Must Be Up-to-Date | ✅ ON |
-| Required CI Checks | lint, test-unit, test-integration, security, build, summary (6 total) |
+| Required CI Checks | lint, test-unit, test-integration, security, build, summary, machine-board, trae-review (8 total) |
 | Allow Force Pushes | ❌ OFF |
 | Allow Deletions | ❌ OFF |
 | Admin Bypass | ❌ OFF (enforce_on_admins: true) |
+
+---
+
+## Machine Board and Trae Review Governance Checks
+
+### machine-board Check
+**Workflow**: `.github/workflows/machine-board.yml`
+**Purpose**: Validates PR submissions to ensure T1-T2 changes have rollback and verification artifacts, and that STATE files are updated.
+**Runs**: On all PR events (opened, synchronized, reopened, labeled, unlabeled)
+**Validation Includes**:
+- ✅ Protected path artifacts (GOVERNANCE/, AGENTS/, COCKPIT/ changes have PLAN/VERIFICATION)
+- ✅ STATE file updates for non-BACKLOG PRs
+- ✅ Risk tier requirements (T1/T2 have rollback plan and verification proof)
+- ✅ Trae review artifacts for T1-T4 changes
+- ✅ No secrets in diffs
+
+### trae-review Check
+**Workflow**: `.github/workflows/trae-review-validator.yml`
+**Purpose**: Validates that Trae (external security/policy reviewer) has reviewed and approved T1-T4 changes.
+**Runs**: On all PR events (opened, synchronized, reopened, labeled, unlabeled)
+**Validation Includes**:
+- ✅ TRAE_REVIEW artifact exists for T1-T4 PRs (protected paths or T1/T2 risk tier)
+- ✅ Artifact verdict is `APPROVE` or `EMERGENCY_OVERRIDE`
+- ✅ Artifact created < 7 days ago (freshness check)
+- ✅ Emergency override flag recognized with documentation
+
+**Trae Review Triggers**:
+- PR touches protected paths: `GOVERNANCE/**`, `AGENTS/**`, `COCKPIT/**`, `.github/workflows/**`, `STATE/**`
+- PR labeled as T1/T2 (`tier-1`, `tier-2`, `critical`, `high-risk`)
+- PR description mentions T1/T2 risk tier
+
+**Related Documentation**:
+- `AGENTS/TRAE.md` - Trae agent definition and scope
+- `RUNBOOKS/trae-review.md` - Trae invocation and protocol
+- `COCKPIT/artifacts/TRAE_REVIEW/` - Trae review artifacts directory
 
 ---
 

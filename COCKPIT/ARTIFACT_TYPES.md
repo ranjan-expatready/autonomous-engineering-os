@@ -754,6 +754,179 @@ links:
 
 ---
 
+### Artifact Type 6: TRAE_REVIEW
+
+**Definition**: A TRAE_REVIEW artifact captures the external security and policy review provided by Trae, the read-only external reviewer, for T1-T4 changes.
+
+**When Created**: When Trae completes a review for a T1-T4 PR (created by Factory based on Trae's verdict).
+
+**Mandatory Fields**:
+
+```yaml
+ARTIFACT_TYPE: TRAE_REVIEW
+
+artifact_id: "TRAE-{timestamp}-{pr-number}"
+created_at: "YYYY-MM-DD HH:MM UTC"
+created_by: "Factory (based on Trae verdict)"
+
+# REVIEW CONTEXT
+pr_number: {pr-number}
+pr_url: "https://github.com/owner/repo/pull/{pr-number}"
+
+# TRAE'S VERDICT
+verdict: "APPROVE" | "REJECT" | "REQUEST_CHANGES" | "EMERGENCY_OVERRIDE"
+signature: "trae-external-reviewer"
+
+# REVIEW SCOPE
+review_scope:
+  - "List of files/directories reviewed by Trae"
+
+# FINDINGS
+security_findings:
+  - "Finding 1 or empty list"
+  - "Finding 2 or empty list"
+policy_violations:
+  - "Violation 1 or empty list"
+  - "Violation 2 or empty list"
+
+# RECOMMENDATIONS
+recommendations: |
+  Trae's recommendations and feedback.
+  Include guidance for fixes if requested changes.
+
+# METADATA
+review_timestamp: "YYYY-MM-DD HH:MM UTC"
+expiry_days: 7
+
+# ARTIFACT LINKS
+links:
+  github_pr: "https://github.com/owner/repo/pull/{pr-number}"
+  artifact_file: "COCKPIT/artifacts/TRAE_REVIEW/TRAE-{timestamp}-{pr-number}.yml"
+```
+
+**Fields Explained**:
+
+| Field | Description |
+|-------|-------------|
+| `artifact_id` | Unique ID: TRAE-{YYYYMMDD}-{PR-NUMBER} |
+| `created_at` | Timestamp when Factory created the artifact |
+| `pr_number` | GitHub PR number being reviewed |
+| `verdict` | Trae's verdict (APPROVE, REJECT, REQUEST_CHANGES, EMERGENCY_OVERRIDE) |
+| `review_scope` | Files/directories Trae reviewed |
+| `security_findings` | List of security issues found (or empty) |
+| `policy_violations` | List of policy violations found (or empty) |
+| `recommendations` | Trae's guidance for fixes or improvements |
+| `review_timestamp` | Timestamp when Trae completed review |
+| `expiry_days` | Artifact expires after X days (default: 7) |
+
+**Verdict Types**:
+
+| Verdict | Meaning | Merge Allowed |
+|---------|---------|---------------|
+| `APPROVE` | No issues, compliant with governance | ✅ Yes |
+| `REJECT` | Critical security/policy issues found | ❌ No |
+| `REQUEST_CHANGES` | Minor issues, should address | ⚠️ Depends on policy |
+| `EMERGENCY_OVERRIDE` | Emergency situation, bypass review | ✅ Yes (with flag) |
+
+**Example - Approved PR**:
+
+```yaml
+ARTIFACT_TYPE: TRAE_REVIEW
+artifact_id: "TRAE-20260125-042"
+created_at: "2026-01-25 10:30 UTC"
+created_by: "Factory (based on Trae verdict)"
+
+pr_number: 42
+pr_url: "https://github.com/owner/repo/pull/42"
+
+verdict: "APPROVE"
+signature: "trae-external-reviewer"
+
+review_scope:
+  - "GOVERNANCE/GUARDRAILS.md"
+  - "scripts/governance_validator.py"
+
+security_findings: []
+policy_violations: []
+
+recommendations: "No security or policy issues found. Change is compliant with governance policies and safe to merge."
+
+review_timestamp: "2026-01-25 10:30 UTC"
+expiry_days: 7
+
+links:
+  github_pr: "https://github.com/owner/repo/pull/42"
+  artifact_file: "COCKPIT/artifacts/TRAE_REVIEW/TRAE-20260125-042.yml"
+```
+
+**Example - Rejected PR (Security Issues)**:
+
+```yaml
+ARTIFACT_TYPE: TRAE_REVIEW
+artifact_id: "TRAE-20260125-043"
+created_at: "2026-01-25 11:00 UTC"
+created_by: "Factory (based on Trae verdict)"
+
+pr_number: 43
+pr_url: "https://github.com/owner/repo/pull/43"
+
+verdict: "REJECT"
+signature: "trae-external-reviewer"
+
+review_scope:
+  - "APP/auth.py"
+
+security_findings:
+  - "Hardcoded password in APP/auth.py line 42: password = 'secret123'"
+  - "SQL injection risk: User input directly interpolated into SQL query on line 58"
+
+policy_violations: []
+
+recommendations: |
+  CRITICAL: Fix security issues before merging:
+  1. Remove hardcoded password, use environment variables or secrets manager
+  2. Use parameterized queries to prevent SQL injection
+  3. Re-request Trae review after fixes
+
+review_timestamp: "2026-01-25 11:00 UTC"
+expiry_days: 7
+
+links:
+  github_pr: "https://github.com/owner/repo/pull/43"
+  artifact_file: "COCKPIT/artifacts/TRAE_REVIEW/TRAE-20260125-043.yml"
+```
+
+**How Trae Artifacts Are Created**:
+
+1. **Factory invokes Trae**: When T1-T4 PR is opened, Factory sends PR context to Trae
+2. **Trae returns verdict**: Trae analyzes and returns verdict (JSON)
+3. **Factory creates artifact**: Based on Trae's verdict, Factory creates TRAE_REVIEW artifact
+4. **Machine Board validates**: Validator checks artifact exists and verdict==APPROVE
+5. **PR allowed to merge**: Only if Trae review passes
+
+**Artifact Expiry**:
+
+- Artifacts expire after 7 days by default
+- Expired artifacts require fresh Trae review
+- PR updates (new commits) trigger artifact refresh
+
+**Emergency Override**:
+
+In emergencies, use `verdict: "EMERGENCY_OVERRIDE"` with:
+```yaml
+verdict: "EMERGENCY_OVERRIDE"
+emergency_reason: "Trae service unavailable, critical security fix needed"
+authorized_by: "@username"
+post_merge_review_required: true
+```
+
+**See Also**:
+- `AGENTS/TRAE.md` - Full Trae agent definition
+- `RUNBOOKS/trae-review.md` - Invocation and protocol
+- `COCKPIT/artifacts/TRAE_REVIEW/TEMPLATE.md` - Artifact template
+
+---
+
 ## ARTIFACT LIFECYCLE
 
 ### Typical Artifact Flow
@@ -765,6 +938,11 @@ PLAN → EXECUTION → VERIFICATION → RELEASE
 **Incident Flow** (occurs independently of normal flow):
 ```
 DETECTED → INCIDENT CREATED → RESOLUTION → POST-MORTEM
+```
+
+**Trae Review Flow** (for T1-T4 changes):
+```
+FACTORY → TRAE → TRAE_REVIEW ARTIFACT → MACHINE BOARD VALIDATION
 ```
 
 ### Artifact Transitions

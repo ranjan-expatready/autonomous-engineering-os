@@ -189,8 +189,8 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
 
 **Branch Protection Settings**:
 - ✅ Require PR before merging: enabled
-- ✅ Required status checks: governance-validator only
-- ❌ Human approvals: 0 (disabled)
+- ✅ Required status checks: machine-board, trae-review (T1-T4 PRs)
+- ❌ Human approvals: 0 (disabled, Trae replaces human approval for T1-T2)
 - ❌ Code owner reviews: disabled
 - ✅ Enforce on admins: enabled (no bypass)
 - ✅ Force push protection: enabled
@@ -201,9 +201,24 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
 - Protected Path Artifacts: Requires PLAN/VERIFICATION for GOVERNANCE/, AGENTS/, etc.
 - STATE File Updates: Required for non-BACKLOG PRs
 - Risk Tier Requirements: T1/T2 require rollback + verification proof
+- Trae Review: T1-T4 PRs require Trae external review approval (read-only advisory)
 - Framework Structure: Validates framework files exist
 
+**Trae External Reviewer Integration**:
+- ✅ AGENTS/TRAE.md - Trae agent defined as mandatory external reviewer
+- ✅ COCKPIT/artifacts/TRAE_REVIEW/ - Trae review artifact type
+- ✅ RUNBOOKS/trae-review.md - Invocation and protocol
+- ✅ .github/workflows/trae-review-validator.yml - Trae review validation
+- ✅ scripts/governance_validator.py - Trae review validation check
+
+**T1-T4 PR Requirements**:
+- Must have TRAE_REVIEW artifact with verdict "APPROVE" or "EMERGENCY_OVERRIDE"
+- Artifact must match PR number (TRAE-{YYYYMMDD}-{PR-NUMBER}.yml)
+- Artifact must be fresh (< 7 days old)
+- Emergency override supported with documentation
+
 **Last Proof Test**: PR #7 merged with 0 human approvals (2026-01-24)
+**Trae Proof Test**: TBD (test PR to validate Trae review enforcement)
 
 ---
 
@@ -332,6 +347,7 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
 
 The Autonomous Engineering OS framework is now complete and stable with:
 - ✓ Governance (PR-only, Machine Board governance stable)
+- ✓ Trae External Reviewer (mandatory external security/policy reviewer for T1-T4)
 - ✓ Quality Gates (Staged coverage policy)
 - ✓ State Management (Auto-resume, status ledger)
 - ✓ Cockpit Integration (Antigravity Manager View)
@@ -343,6 +359,7 @@ The Autonomous Engineering OS framework is now complete and stable with:
 
 **Governance Enforcement**: Active via .github/workflows/machine-board.yml ✅
 **Machine Board Status**: Operational (PR #10 merged, Actions #21327980330 PASS) ✅
+**Trae Integration**: Complete (AGENTS/TRAE.md, trae-review-validator.yml, TRAE_REVIEW artifacts) ✅
 **Blockers Cleared**: 5/5 (governance-validator.yml issues, branch protection, workflow conflicts) ✅
 
 **Next Phase**: Product definition in PRODUCT/ directory (SDLC Board automation rules documented and configuration protocol created)

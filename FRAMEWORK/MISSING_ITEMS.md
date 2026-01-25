@@ -30,6 +30,7 @@ All framework components are complete and operational:
 |----------|-------|--------|----------|
 | Constitution & Governance | 5/5 items | ✅ COMPLETE | GOVERNANCE/*.md |
 | Machine Board Governance | 8/8 items | ✅ STABLE | PR #10, Actions #21327980330 |
+| Trae External Reviewer | 10/10 items | ✅ COMPLETE | AGENTS/TRAE.md, .github/workflows/trae-review-validator.yml |
 | Resume & State Management | 3/3 items | ✅ COMPLETE | STATE/*.md |
 | Cockpit Contracts | 4/4 items | ✅ COMPLETE | COCKPIT/*.md |
 | MCP Installation | 4/4 items | ✅ COMPLETE | ARABOLD_MCP_INSTALLATION_ARTIFACT.md |
@@ -279,6 +280,7 @@ All framework-level blockers have been cleared. Machine Board governance is stab
 |------|--------|----------|
 | Framework initialization | ✅ COMPLETE | FRAMEWORK_LOCKED_ARTIFACT.md |
 | Constitution & Governance | ✅ COMPLETE | GOVERNANCE/*.md |
+| Trae External Reviewer Integration | ✅ COMPLETE | AGENTS/TRAE.md, trae-review-validator.yml |
 | Resume & State Management | ✅ COMPLETE | STATE/*.md |
 | Cockpit Contracts | ✅ COMPLETE | COCKPIT/*.md |
 | MCP Installation | ✅ COMPLETE | ARABOLD_MCP_INSTALLATION_ARTIFACT.md |
