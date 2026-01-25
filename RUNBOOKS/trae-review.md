@@ -1,5 +1,7 @@
 # Trae Review Runbook — Invocation and Protocol
 
+Machine-board sanity check marker: 2026-01-25
+
 ## Overview
 
 This runbook describes the complete protocol for invoking Trae, the external security and policy reviewer, and handling its verdicts in the Autonomous Engineering OS.
