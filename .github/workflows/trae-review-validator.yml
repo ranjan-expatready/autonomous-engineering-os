@@ -74,6 +74,9 @@ jobs:
           # Export CHANGED_FILES for Python script
           export CHANGED_FILES="$CHANGED_FILES"
 
+          # Write changed files to a temp file for Python to read
+          echo "$CHANGED_FILES" > /tmp/changed_files.txt
+
           python - << 'PYEOF'
           import os
           import sys
@@ -81,6 +84,11 @@ jobs:
           import subprocess
           from pathlib import Path
           from datetime import datetime, timedelta
+
+          # Read CHANGED_FILES from temp file (heredoc env var workaround)
+          temp_file = Path("/tmp/changed_files.txt")
+          if temp_file.exists():
+              os.environ['CHANGED_FILES'] = temp_file.read_text().strip()
 
           # Configuration
           REPO_ROOT = Path(os.getenv("GITHUB_WORKSPACE", "."))
