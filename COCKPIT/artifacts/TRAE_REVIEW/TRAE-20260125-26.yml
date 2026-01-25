@@ -46,8 +46,14 @@ recommendations: |
   - No risk_tier changes
   - No governance policy changes
 
+  Rollback Plan:
+  - This is a documentation-only update (SSOT state tracking)
+  - Rollback: Revert commit b206da9 using \`git revert b206da9\`
+  - Impact: Minimal - just reverts documentation state
+  - Est. rollback time: < 1 minute
+
   Expected Outcome:
-  - machine-board check: ✅ PASS (SSOT documentation update)
+  - machine-board check: ✅ PASS (SSOT documentation update with rollback plan)
   - Validate Trae Review: ✅ PASS (artifact exists with verdict=APPROVE)
   - PR should be allowed to merge
 
