@@ -379,9 +379,22 @@ Single source of truth mapping all framework work to concrete evidence: PRs, com
 
 ### GITHUB_PROJECT_SDLC_ARTIFACT.md
 
-**Date**: TBD (post-framework)
+**Date**: 2026-01-25
 
-**Significance**: GitHub Project v2 board for live SDLC tracking (next step)
+**Significance**: GitHub Project v2 board for live SDLC tracking created and configured
+
+**Project ID**: PVT_kwHODjbJ_M4BNbV3
+**Project URL**: https://github.com/users/ranjan-expatready/projects/2
+**Test Issue**: #13
+**Test PR**: #14
+
+**Custom Fields Configured**:
+- Type: Epic, Feature, Bug, Incident, Tech Debt (Single Select)
+- Risk Tier: T0, T1, T2, T3 (Single Select)
+- Owner: Product, Code, Reliability, Knowledge, Advisor (Single Select)
+- Release: Text field
+
+**Status Columns**: Backlog, Planned, In Progress, In Review (PR Open), Waiting for Approval, Blocked, Ready for Release, Done
 
 ---
 
@@ -478,6 +491,7 @@ All framework components are complete with traceable evidence:
 
 ## Version History
 
+- v1.0 (2026-01-25): GitHub Projects Board evidence added
 - v1.0 (2026-01-25): Initial evidence index, PR #10 evidence added
 - v1.0 (2026-01-24): Machine Board activation artifacts
 
