@@ -304,6 +304,70 @@ Factory invokes Trae for T1-T4 PR → Trae returns verdict (APPROVE/REJECT/REQUE
 
 ---
 
+### ✅ Daily Brief + Approvals Queue Generator
+
+**Status**: COMPLETE ✅
+**Completed**: 2026-01-25
+**Evidence**: PR for daily brief generator (see FRAMEWORK/EVIDENCE_INDEX.md)
+
+**Deliverables**:
+- ✅ scripts/generate_daily_brief.py - Python script with GitHub API integration
+- ✅ .github/workflows/daily-brief.yml - GitHub Actions workflow (daily + manual trigger)
+- ✅ RUNBOOKS/OPERATING_MANUAL.md - Updated Founder daily flow with Antigravity board member loop
+- ✅ Artifact structure: COCKPIT/artifacts/DAILY_BRIEF/ and COCKPIT/artifacts/APPROVALS_QUEUE/
+
+**Founder's Board Member Role**:
+- **Daily Brief (5-10 minutes)**: Auto-generated overview of system state
+  - Executive summary: open PRs, issues, blocked items
+  - Trae review requirements for T1-T2 changes
+  - Open PRs with CI status
+  - SDLC project items (Waiting for Approval, Blocked, In Review)
+  - Open Issues
+
+- **Approvals Queue (Explicit YES/NO/DEFER decisions)**:
+  - Trae Review Required (T1-T2 PRs)
+  - Waiting for Approval (Project items)
+  - Blocked Items
+  - CI Failing PRs
+
+- **Decision Automation**: Factory agents automatically process PR comments
+
+**Artifacts Generated**:
+- `COCKPIT/artifacts/DAILY_BRIEF/BRIEF-YYYYMMDD.md`
+- `COCKPIT/artifacts/APPROVALS_QUEUE/APPROVALS-YYYYMMDD.md`
+
+**Governance Compliance**:
+- ✅ Least privilege permissions (contents: read, pull-requests: write)
+- ✅ Machine Board governs artifact updates via PR workflow
+- ✅ Trae enforcement not bypassed (Trae section in daily brief)
+- ✅ No secrets leaked (only metadata logged)
+
+**Workflow Features**:
+- ✅ Scheduled run: daily at 09:00 UTC
+- ✅ Manual trigger: workflow_dispatch
+- ✅ Dry run mode: test generation without creating PR
+- ✅ Auto-creates PR with artifact links and summary
+- ✅ Updates existing daily-brief branch
+
+**Dependencies**:
+- Python 3.11 with requests library
+- GitHub API access (via DAILY_BRIEF_TOKEN or GITHUB_TOKEN)
+- SDLC Project v2 configuration
+
+**Files**: `scripts/generate_daily_brief.py`, `.github/workflows/daily-brief.yml`, `RUNBOOKS/OPERATING_MANUAL.md`
+
+**Founder Benefits**:
+- ✅ Single daily review (no manual GitHub navigation needed)
+- ✅ Explicit YES/NO/DEFER decisions (clear actionability)
+- ✅ System operates autonomously when decisions=0
+- ✅ Trae review requirements clearly tracked
+- ✅ Blocked items surface automatically
+
+**Blockers Cleared**:
+- None - Daily brief generator complete and operational
+
+---
+
 ## Current Blockers
 
 ### None

@@ -264,74 +264,129 @@ This manual is the single canonical reference for the Autonomous Engineering OS.
 
 ## Daily Founder Workflow
 
-**Board Member View (5-10 Minutes Daily)**
+**Board Member View (5-10 Minutes Daily) — Antigravity Board Member Loop**
 
-### Step 1: Check Status
+The Founder now acts as a board member reviewing auto-generated daily artifacts. The system generates operational briefs and approvals queues automatically via CI, requiring minimal manual GitHub navigation.
 
-**Command**: Read `STATE/STATUS_LEDGER.md`
+---
+
+### Overview
+
+**Generated Daily Artifacts** (automated via CI, run daily at 09:00 UTC):
+- **DAILY_BRIEF (`COCKPIT/artifacts/DAILY_BRIEF/BRIEF-YYYYMMDD.md`)**: System overview, open PRs, project status, Trae review requirements
+- **APPROVALS_QUEUE (`COCKPIT/artifacts/APPROVALS_QUEUE/APPROVALS-YYYYMMDD.md`)**: Explicit YES/NO/DEFER decisions needed
+
+**Access Method**:
+- Review the daily-brief PR that CI creates automatically
+- OR manually view artifacts in `COCKPIT/artifacts/` directory
+
+---
+
+### Step 1: Read Daily Brief (2-3 Minutes)
+
+**File**: `COCKPIT/artifacts/DAILY_BRIEF/BRIEF-YYYYMMDD.md`
 
 **What to Look For**:
-- Current objective and sprint goal
-- Active agents and their last activities
-- Open issues and PRs
-- Current blockers (should be few)
+- **Executive Summary**: Quick stats (open PRs, issues, blocked items)
+- **Trae Required**: T1-T2 PRs waiting for Trae review
+- **Open PRs**: All active pull requests with CI status
+- **Project Items**: SDLC project status (Waiting for Approval, Blocked, In Review)
 
-**Quick Scan**: Green if ✅ Framework Complete, agents in IDLE, no critical blockers
-
----
-
-### Step 2: Approve Gates
-
-**Command**: Check GitHub open PRs (`gh pr list`)
-
-**What to Approve**:
-- T1 work (critical production changes)
-- T2 work with failed automated gates
-- GOVERNANCE/ or AGENTS/ changes (framework modifications)
-
-**What to Skip**:
-- T3/T4 work (auto-merges already handled)
-- APP/ feature changes with green CI
+**Quick Scan**: Green if:
+- ✅ No Trae reviews missing for T1-T2
+- ✅ No blocked items
+- ✅ CI checks passing on all PRs
+- ✅ "System operating autonomously" in Approvals Queue summary
 
 ---
 
-### Step 3: Review Artifacts
+### Step 2: Act on Approvals Queue (3-5 Minutes)
 
-**Command**: Check recent artifacts in root directory and AGENTS/
+**File**: `COCKPIT/artifacts/APPROVALS_QUEUE/APPROVALS-YYYYMMDD.md`
 
-**What to Look For**:
-- PLAN artifacts — verify strategy aligns with vision
-- EXECUTION artifacts — verify work completed correctly
-- VERIFICATION artifacts — confirm quality gates passed
-- Any INCIDENT artifacts — review and resolve
+**Decision Format**:
+For each item, respond by commenting on the daily-brief PR:
+- **YES** — Approve the action (allow merge, unblock, etc.)
+- **NO** — Reject or request defer (explain briefly)
+- **EMERGENCY_OVERRIDE** — Force proceed (document reason for accountability)
 
-**Cockpit View**: Use Antigravity Manager View (`RUNBOOKS/antigravity-setup.md`) for visual artifact tracking
+**Decision Categories**:
+
+1. **Trae Review Required** (T1-T2 PRs):
+   - **Missing Trae Artifact**: YES = authorize Trae invocation | NO = defer
+   - **Trae APPROVED**: YES = authorize merge | NO = defer
+   - **Trae REJECT/REQUEST_CHANGES**: YES = request re-review | NO = defer
+
+2. **Waiting for Approval** (Project Items):
+   - YES = authorize proceeding with work
+   - NO = defer until next cycle
+   - EMERGENCY_OVERRIDE = force proceed (document reason)
+
+3. **Blocked Items**:
+   - YES = unblock item
+   - NO = keep blocked
+
+4. **CI Failing PRs**:
+   - YES = approve retry after fix
+   - NO = let author fix first
+
+**Decision Automation**: Factory agents automatically process your PR comments and take actions.
 
 ---
 
-### Step 4: Resume (If Needed)
+### Step 3: Review Artifacts (Optional, 1-2 Minutes)
+
+**Location**: Various artifact directories and files
+
+**What to Review** (if interested):
+- Recent PLAN, EXECUTION, VERIFICATION artifacts in project
+- Any INCIDENT artifacts requiring attention
+- Trae review artifacts (`COCKPIT/artifacts/TRAE_REVIEW/`)
+
+**Cockpit View**: Use Antigravity Manager View (`RUNBOOKS/antigravity-setup.md`) for visual artifact tracking if detailed review needed.
+
+---
+
+### Step 4: Resume Autonomous Work (If Paused, Optional)
 
 **Command**: `Factory, please resume autonomous work.`
 
 **When to Use**:
-- System was paused by a gate
-- New day, want to continue yesterday's work
+- System was paused by a gate (unlikely with daily brief system)
+- Want to trigger next work item immediately
 - After addressing a blocker
 
-**Expectation**: System reconstructs state automatically, continues where it left off
+**Expectation**: System reconstructs state automatically, continues where it left off, respects your daily decisions.
 
 ---
 
 ### Quick Daily Summary
 
 ```
-[ ] STATUS_LEDGER — green, framework complete, agents idle
-[ ] PRs — no human approvals required (or approve T1/T2 items)
-[ ] Artifacts — reviewed recent work, no issues
-[ ] RESUME — trigger if work paused, otherwise daily check complete
+[ ] DAILY_BRIEF — reviewed, no surprises
+[ ] APPROVALS_QUEUE — all decisions made (or decisions=0)
+[ ] Artifacts — optional quick review (if needed)
+[ ] RESUME — trigger if work paused, otherwise system runs autonomously
 ```
 
-**Weekly Ritual**: Fridays — Agent Readiness KPI review, sprint planning, backlog refinement
+**No Action Required**: If Approvals Queue summary shows "Total Decisions Required: 0", the system is operating fully autonomously today. No action needed.
+
+**Weekly Ritual**: Fridays — Agent Readiness KPI review, sprint planning, backlog refinement.
+
+---
+
+### Manual Trigger (Optional)
+
+**Trigger Daily Brief Manually**:
+```bash
+gh workflow run daily-brief.yml
+```
+
+Or via GitHub UI: `.github/workflows/daily-brief.yml` → Run workflow → Run workflow
+
+**Dry Run Mode** (test generation without creating PR):
+- In workflow run UI, enable `dry_run` checkbox
+- Artifacts generated but no PR created
 
 ---
 

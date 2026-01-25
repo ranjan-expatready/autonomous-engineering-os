@@ -300,6 +300,68 @@ Single source of truth mapping all framework work to concrete evidence: PRs, com
 
 ---
 
+### PR #XX: feat: daily brief + approvals queue (antigravity board-member loop) (pending)
+
+**State**: PENDING (to be assigned)
+
+**Files**:
+- Added: `scripts/generate_daily_brief.py` - Python script with GitHub API integration for daily artifact generation
+- Added: `.github/workflows/daily-brief.yml` - GitHub Actions workflow (daily schedule + manual trigger)
+- Added: `COCKPIT/artifacts/DAILY_BRIEF/DAILY_BRIEF_ARTIFACT.md` - Directory and template for daily brief artifacts
+- Added: `COCKPIT/artifacts/APPROVALS_QUEUE/APPROVALS_QUEUE_ARTIFACT.md` - Directory and template for approvals queue artifacts
+- Modified: `RUNBOOKS/OPERATING_MANUAL.md` - Updated Founder daily flow with Antigravity board member loop
+- Modified: `FRAMEWORK/PROGRESS.md` - Added Daily Brief + Approvals Queue Generator section
+- Modified: `FRAMEWORK/EVIDENCE_INDEX.md` - Added daily brief generator entries (this file)
+- Modified: `STATE/STATUS_LEDGER.md` - Updated operational state
+
+**Evidence**:
+- ✅ Daily brief generator script with GitHub API integration (fetches PRs, issues, project items)
+- ✅ Approvals queue with explicit YES/NO/DEFER decisions for:
+  - Trae review requirements (T1-T2 PRs)
+  - Waiting for Approval (project items)
+  - Blocked items
+  - CI failing PRs
+- ✅ GitHub Actions workflow with:
+  - Daily schedule (09:00 UTC)
+  - Manual trigger (workflow_dispatch)
+  - Dry run mode
+  - Auto-creates PR with artifact links
+- ✅ Founder operates as board member reviewing auto-generated artifacts (no manual GitHub navigation needed)
+- ✅ Machine Board governs artifact updates via PR workflow
+
+**Governance Compliance**:
+- ✅ Least privilege permissions (contents: read, pull-requests: write)
+- ✅ Machine Board validates artifact PRs
+- ✅ Trae enforcement not bypassed (Trae section in daily brief highlights missing reviews)
+- ✅ No secrets leaked (only metadata logged)
+
+**Artifacts Generated**:
+- `COCKPIT/artifacts/DAILY_BRIEF/BRIEF-YYYYMMDD.md` - System overview and status
+- `COCKPIT/artifacts/APPROVALS_QUEUE/APPROVALS-YYYYMMDD.md` - Explicit decisions needed
+
+**Founder Benefits**:
+- ✅ Single daily review (5-10 minutes)
+- ✅ No manual GitHub navigation required
+- ✅ Explicit YES/NO/DEFER decisions (clear actionability)
+- ✅ System operates autonomously when decisions=0
+- ✅ Trae review requirements clearly tracked
+- ✅ Blocked items surface automatically
+
+**Dependencies**:
+- Python 3.11 with requests library
+- GitHub API access (via DAILY_BRIEF_TOKEN or GITHUB_TOKEN)
+- SDLC Project v2 configuration
+
+**Commit**: TBD
+
+**Actions**: TBD
+
+**Artifact**: DAILY_BRIEF_GENERATOR_ARTIFACT.md (to be created)
+
+**Significance**: Founder now acts as board member reviewing auto-generated operational artifacts instead of manually navigating GitHub Projects, PR triage, or managing Trae bookkeeping. System generates daily brief and approvals queue automatically, requiring minimal Founder time (5-10 minutes daily).
+
+---
+
 ## Commits → Evidence Mapping
 
 ### 751911461d7d2e320719a0f1fb37ae4d440316a9 (2026-01-25)

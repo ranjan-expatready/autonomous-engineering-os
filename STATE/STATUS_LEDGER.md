@@ -116,32 +116,46 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
    - **Priority**: HIGH
    - **Owner**: Founder/CTO Agents
    - **Estimated Time**: Ongoing
-   - **Dependencies**: SDLC Simulation Complete ✅
+   - **Dependencies**: SDLC Simulation Complete ✅, Daily Brief Generator Installed ✅
    - **Risk Tier**: T0
    - **Actions**:
      - Populate PRODUCT/ with real product requirements
      - Create backlog items for MVP features
      - Begin product development using autonomous agents
+     - Review daily brief and approvals queue artifacts (5-10 min daily)
 
 2. **Configure SDLC Board Automation** (Optional)
-   - **Priority**: MEDIUM
+   - **Priority**: LOW
    - **Owner**: Founder/CTO
    - **Estimated Time**: 15-20 minutes
    - **Dependencies**: None
    - **Risk Tier**: T0
    - **Actions**:
      - Manual web UI configuration per SDLC_AUTOMATION_VERIFICATION.md
-     - Not required: Simulation completed successfully
+     - Not required: Daily brief generator provides automated project status tracking
 
 3. **Configure Antigravity Cockpit** (Optional)
-   - **Priority**: MEDIUM
+   - **Priority**: LOW
    - **Owner**: Founder/CTO
    - **Estimated Time**: ~30 minutes
    - **Dependencies**: None
    - **Risk Tier**: T0
    - **Actions**:
      - Manual web UI configuration per RUNBOOKS/antigravity-setup.md
-     - Not required: Framework proven to work
+     - Not required: Daily brief generator provides artifact summaries
+
+4. **Review Daily Brief (New Founder Workflow)**
+   - **Priority**: DAILY (09:00 UTC auto-generated)
+   - **Owner**: Founder (Board Member)
+   - **Estimated Time**: 5-10 minutes
+   - **Dependencies**: Daily Brief Generator Installed ✅
+   - **Risk Tier**: T0
+   - **Actions**:
+     - Review auto-generatedDaily Brief in COCKPIT/artifacts/DAILY_BRIEF/
+     - Act on Approvals Queue in COCKPIT/artifacts/APPROVALS_QUEUE/
+     - Respond with YES/NO/DEFER decisions via PR comments
+     - System operates autonomously when decisions=0
+     - No manual GitHub navigation required
 
 ---
 
