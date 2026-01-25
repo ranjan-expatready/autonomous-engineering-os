@@ -52,6 +52,16 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
 
 ---
 
+## Active Tests
+
+### Ongoing Tests (Ordered by Priority)
+
+| Test Name | Purpose | Risk Tier | Status | Expected Outcome |
+|-----------|---------|-----------|--------|------------------|
+| Trae Enforcement Test A (Negative) | Validate T1 change blocked without Trae artifact | T1 | IN PROGRESS | FAIL - Validate Trae Review check should fail |
+
+---
+
 ## Last Completed Artifact
 
 ### Most Recent Artifact
