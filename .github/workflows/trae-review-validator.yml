@@ -71,6 +71,9 @@ jobs:
             exit 0
           fi
 
+          # Export CHANGED_FILES for Python script
+          export CHANGED_FILES="$CHANGED_FILES"
+
           python - << 'PYEOF'
           import os
           import sys
