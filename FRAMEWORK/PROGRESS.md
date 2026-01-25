@@ -23,6 +23,7 @@ Single source of truth for Autonomous Engineering OS framework implementation pr
 | CI/CD Infrastructure | ✅ COMPLETE | 100% | 2026-01-23 |
 | Documentation / SSOT | ✅ COMPLETE | 100% | 2026-01-25 |
 | Operating Manual | ✅ PUBLISHED | 100% | 2026-01-24 |
+| SDLC Board Documentation | 🔄 PREPARED | 95% | 2026-01-25 |
 
 ---
 
@@ -182,6 +183,31 @@ Single source of truth for Autonomous Engineering OS framework implementation pr
 **PR Evidence**:
 - PR #8: docs: add operating manual (content merged via PR #10)
 - Merge commit: 751911461d7d2e320719a0f1fb37ae4d440316a9
+
+---
+
+### 🔄 SDLC Board Documentation
+
+**Status**: PREPARED (awaiting manual project creation)
+**Completed**: 2026-01-25
+**Evidence**: RUNBOOKS/resume-protocol.md (updated with SDLC Board check), STATUS_LEDGER.md (added milestone)
+**Reference**: GITHUB_PROJECT_SDLC_ARTIFACT.md
+
+**Deliverables**:
+- 🔄 SDLC Board resume protocol integration (STEP 4: Check SDLC Board Status)
+- 🔄 STATUS_LEDGER updated with SDLC Board checkpoint in resume flow
+- 🔄 Documentation ready for live SDLC tracking via GitHub Projects v2
+
+**Remaining**:
+- ❌ Manual project creation required (GitHub API token scope limitation)
+- ❌ Configure custom fields: Type, Risk Tier, Owner, Release
+- ❌ Configure Kanban columns: Backlog, Planned, In Progress, In Review (PR Open), Waiting for Approval, Blocked, Ready for Release, Done
+- ❌ Configure 7 automation rules (issue → project, PR actions, labels)
+- ❌ Configure 3 views: Founder View, Engineering View, Release View
+
+**Files Updated**: `RUNBOOKS/resume-protocol.md`, `STATE/STATUS_LEDGER.md`
+
+**Note**: Due to GitHub API token scope limitations (missing `project` and `read:project` scopes), the actual GitHub Project v2 board must be created manually following the detailed instructions in GITHUB_PROJECT_SDLC_ARTIFACT.md. Once created, the board URL should be added to the evidence index.
 
 ---
 
