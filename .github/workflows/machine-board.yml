@@ -1,6 +1,6 @@
-name: Governance Validator — Machine Board of Directors
+name: machine-board
 
-# Pull Request Governance Enforcement
+# Pull Request Governance Enforcement - Machine Board of Directors
 # This workflow enforces automated governance on all pull requests.
 # PRs must pass all validation checks before merge is allowed.
 
@@ -8,13 +8,11 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
     branches: [main]
-
-# Allow manual trigger for testing
-workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   governance:
-    name: Governance Validation
     runs-on: ubuntu-latest
 
     steps:
@@ -36,32 +34,23 @@ jobs:
           GITHUB_BASE_REF: ${{ github.event.base_ref || github.event.pull_request.base.ref || 'main' }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          echo "🤖 Machine Board Governance Validator"
+          echo "🤖 Running Machine Board of Directors Governance Validator"
           echo "Event: $EVENT_NAME"
           echo "PR Number: $PR_NUMBER"
           echo "Base Branch: $GITHUB_BASE_REF"
           echo ""
-          
+
           # Skip validation on push events (only for PRs)
           if [ "$EVENT_NAME" != "pull_request" ] && [ "$EVENT_NAME" != "pull_request_target" ]; then
-            echo "ℹ️  Skipping validation on push events"
+            echo "ℹ️  Skipping governance validator on push events"
             echo "✅ Governance validation passed (skipped)"
             exit 0
           fi
-          
-          # Check if PR has a description (PR opened from web UI)
-          if [ -z "$PR_DESCRIPTION" ]; then
-            echo "ℹ️  No PR description found"
-          fi
-          
+
           python scripts/governance_validator.py
 
-      - name: Mark as passed
-        if: steps.govern.outcome == 'success'
-        run: echo "✅ Governance validation passed"
-
       - name: Upload validation results
-        if: always() && github.event_name == 'pull_request' && steps.govern.outcome != 'failure'
+        if: always() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: governance-validator-results
@@ -72,42 +61,41 @@ jobs:
         if: github.event_name == 'pull_request' && always()
         uses: actions/github-script@v6
         with:
-          permissions: {}
           script: |
             const fs = require('fs');
             const resultsPath = '.governance_validator_results.json';
-            
+
             if (fs.existsSync(resultsPath)) {
               const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
-              
-              let comment = '## 🤖 Machine Board - Validation Results\\n\\n';
-              
+
+              let comment = '## 🤖 Machine Board of Directors - Validation Results\n\n';
+
               const passed = results.results.every(r => r.passed);
               const status = passed ? '✅ PASSED' : '❌ FAILED';
-              
-              comment += `**Overall Status: ${status}**\\n\\n`;
-              comment += '### Validation Checks\\n\\n';
-              
+
+              comment += `**Overall Status: ${status}**\n\n`;
+              comment += '### Validation Checks\n\n';
+
               results.results.forEach(r => {
                 const icon = r.passed ? '✅' : '❌';
-                comment += `${icon} **${r.name}**\\n`;
+                comment += `${icon} **${r.name}**\n`;
                 if (r.message) {
-                  comment += `   ${r.message}\\n`;
+                  comment += `   ${r.message}\n`;
                 }
-                comment += '\\n';
+                comment += '\n';
               });
-              
+
               // Add guidance for failures
               if (!passed) {
-                comment += '### Required Actions\\n\\n';
-                comment += 'To fix validation failures:\\n\\n';
-                comment += '1. **Missing Artifacts**: Add PLAN and VERIFICATION sections to PR description\\n';
-                comment += '2. **STATE Files**: Update STATE/STATUS_LEDGER.md and STATE/LAST_KNOWN_STATE.md\\n';
-                comment += '3. **Risk Tier**: For T1/T2, include rollback plan and verification proof\\n';
-                comment += '4. **Secrets**: Remove or rotate any exposed credentials\\n\\n';
-                comment += 'See GOVERNANCE/GUARDRAILS.md for detailed requirements.\\n';
+                comment += '### Required Actions\n\n';
+                comment += 'To fix validation failures:\n\n';
+                comment += '1. **Missing Artifacts**: Add PLAN and VERIFICATION sections to PR description\n';
+                comment += '2. **STATE Files**: Update STATE/STATUS_LEDGER.md and STATE/LAST_KNOWN_STATE.md\n';
+                comment += '3. **Risk Tier**: For T1/T2, include rollback plan and verification proof\n';
+                comment += '4. **Secrets**: Remove or rotate any exposed credentials\n\n';
+                comment += 'See GOVERNANCE/GUARDRAILS.md for detailed requirements.\n';
               }
-              
+
               // Post comment
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
@@ -123,3 +111,7 @@ jobs:
           echo "❌ Governance validation failed"
           echo "Please fix the validation errors and push a new commit."
           exit 1
+
+      - name: Mark as passed
+        if: steps.govern.outcome == 'success'
+        run: echo "✅ Governance validation passed"
