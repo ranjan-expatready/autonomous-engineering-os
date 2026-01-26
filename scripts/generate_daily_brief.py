@@ -365,7 +365,7 @@ def generate_daily_brief(prs: List[Dict], issues: List[Dict], project_items: Lis
 
         if risk_tier in ["T1", "T2"]:
             if not trae_artifact:
-                traes_required.append({
+                trae_required.append({
                     "pr": pr,
                     "risk_tier": risk_tier,
                     "verdict": "MISSING",
@@ -375,7 +375,7 @@ def generate_daily_brief(prs: List[Dict], issues: List[Dict], project_items: Lis
                 created_at = trae_artifact.get("created_at", "")
                 is_stale = is_artifact_stale(created_at) if created_at else False
 
-                traes_required.append({
+                trae_required.append({
                     "pr": pr,
                     "risk_tier": risk_tier,
                     "verdict": verdict,
@@ -384,8 +384,8 @@ def generate_daily_brief(prs: List[Dict], issues: List[Dict], project_items: Lis
                     "artifact_path": trae_artifact.get("file_path"),
                 })
 
-    if traes_required:
-        for item in traes_required:
+    if trae_required:
+        for item in trae_required:
             pr = item["pr"]
             verdict = item["verdict"]
             brief.append(f"### PR #{pr.get('number')}: {pr.get('title')}")
