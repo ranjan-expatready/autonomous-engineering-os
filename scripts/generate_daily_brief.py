@@ -324,6 +324,294 @@ def get_project_items() -> List[Dict]:
         return []
 
 
+def get_project_items() -> List[Dict]:
+    """Get items from GitHub Project v2 using GraphQL."""
+    if not GITHUB_TOKEN:
+        log("WARNING: No GITHUB_TOKEN, skipping project items query", "WARN")
+        return []
+
+    # GraphQL query for project items
+    query = """
+    query($owner: String!, $repo: String!, $projectNumber: Int!) {
+      repository(owner: $owner, name: $repo) {
+        projectsV2(first: 10) {
+          nodes {
+            number
+            title
+            items(first: 100) {
+              nodes {
+                id
+                content {
+                  ... on Issue {
+                    number
+                    title
+                    state
+                    url
+                  }
+                }
+                fieldValues(first: 10) {
+                  nodes {
+                    ... on ProjectV2ItemFieldSingleSelectValue {
+                      name
+                      field {
+                        ... on ProjectV2FieldCommon {
+                          name
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+
+    variables = {
+        "owner": REPO_OWNER,
+        "repo": REPO_NAME,
+        "projectNumber": int(SDLC_PROJECT_NUMBER),
+    }
+
+    try:
+        import requests
+        response = requests.post(
+            f"{GITHUB_API_URL}/graphql",
+            headers=get_github_headers(),
+            json={"query": query, "variables": variables},
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        # Extract items from project
+        items = []
+        projects = data.get("data", {}).get("repository", {}).get("projectsV2", {}).get("nodes", [])
+        for project in projects:
+            if project.get("number") == int(SDLC_PROJECT_NUMBER):
+                item_nodes = project.get("items", {}).get("nodes", [])
+                for item_node in item_nodes:
+                    content = item_node.get("content")
+                    if content:
+                        # Parse field values
+                        status = None
+                        field_values = item_node.get("fieldValues", {}).get("nodes", [])
+                        for fv in field_values:
+                            field = fv.get("field", {})
+                            if field and field.get("name") == "Status":
+                                status = fv.get("name")
+                                break
+
+                        items.append({
+                            "number": content.get("number"),
+                            "title": content.get("title"),
+                            "state": content.get("state"),
+                            "url": content.get("url"),
+                            "status": status,
+                        })
+                break
+
+        return items
+
+    except Exception as e:
+        log(f"Error fetching project items: {e}", "ERROR")
+        return []
+
+
+def get_governance_failures(prs: List[Dict]) -> List[Dict]:
+    """Get list of governance failures across PRs.
+    
+    Parses governance_validator_results.json if available.
+    Returns list of failure dictionaries with type and details.
+    """
+    failures = []
+    
+    # Try to read governance validator results
+    validator_results_path = REPO_ROOT / ".governance_validator_results.json"
+    
+    if validator_results_path.exists():
+        try:
+            with open(validator_results_path) as f:
+                results = json.load(f)
+                results_list = results.get("results", [])
+                
+                # Parse PLAN structure failures
+                for result in results_list:
+                    if not result.get("passed"):
+                        failure_type = result.get("name", "UNKNOWN")
+                        message = result.get("message", "")
+                        
+                        if "PLAN Structure" in failure_type:
+                            # Extract missing fields from message
+                            missing_fields = []
+                            if "Missing required PLAN fields" in message:
+                                fields_str = message.split("Missing required PLAN fields:")[-1].strip()
+                                missing_fields = [f.strip() for f in fields_str.split(",") if f.strip()]
+                            
+                            failures.append({
+                                "type": "PLAN_STRUCTURE",
+                                "pr_number": "N/A",  # Would need PR context
+                                "pr_title": "Governance Check Failures",
+                                "pr_link": "",
+                                "missing_fields": missing_fields,
+                                "risk_tier": "T1",
+                            })
+                        elif "Trae Review" in failure_type:
+                            failures.append({
+                                "type": "TRAE_REVIEW",
+                                "pr_number": "N/A",
+                                "pr_title": "Trae Review Required",
+                                "pr_link": "",
+                                "status": message if message else "Missing",
+                                "reason": "Trae review artifact not found",
+                                "action": "Get Trae review",
+                            })
+                        elif "CI" in failure_type or "Secret" in failure_type:
+                            failures.append({
+                                "type": "CI_FAILURE",
+                                "pr_number": "N/A",
+                                "pr_title": "CI Failure",
+                                "pr_link": "",
+                                "status": message if message else "Failed",
+                            })
+        except Exception as e:
+            log(f"Error reading validator results: {e}", "ERROR")
+    
+    # Also check PRs directly for missing Trae reviews on T1/T2
+    for pr in prs:
+        pr_number = pr.get("number")
+        trae_artifact = get_trae_artifact(pr_number)
+        risk_tier = detect_risk_tier(pr, trae_artifact)
+        
+        if risk_tier in ["T1", "T2"]:
+            if not trae_artifact:
+                failures.append({
+                    "type": "TRAE_REVIEW",
+                    "pr_number": pr_number,
+                    "pr_title": pr.get("title", "Unknown"),
+                    "pr_link": pr.get("html_url", ""),
+                    "status": "MISSING",
+                    "reason": "No Trae review artifact found",
+                    "action": "Get Trae review",
+                    "risk_tier": risk_tier,
+                })
+            elif trae_artifact.get("verdict") not in ["APPROVE", "EMERGENCY_OVERRIDE"]:
+                verdict = trae_artifact.get("verdict", "UNKNOWN")
+                failures.append({
+                    "type": "TRAE_REVIEW",
+                    "pr_number": pr_number,
+                    "pr_title": pr.get("title", "Unknown"),
+                    "pr_link": pr.get("html_url", ""),
+                    "status": verdict,
+                    "reason": f"Trae verdict is {verdict}",
+                    "action": "Address Trae's findings" if verdict == "REQUEST_CHANGES" else "Get fresh Trae review",
+                    "risk_tier": risk_tier,
+                })
+            else:
+                # Check if stale
+                created_at = trae_artifact.get("created_at", "")
+                if created_at and is_artifact_stale(created_at):
+                    failures.append({
+                        "type": "TRAE_REVIEW",
+                        "pr_number": pr_number,
+                        "pr_title": pr.get("title", "Unknown"),
+                        "pr_link": pr.get("html_url", ""),
+                        "status": "STALE",
+                        "reason": f"Trae review is stale (created: {created_at})",
+                        "action": "Get fresh Trae review",
+                        "risk_tier": risk_tier,
+                    })
+    
+    # Check CI status for failures
+    for pr in prs:
+        pr_number = pr.get("number")
+        ci_passing, ci_status = get_pr_checks_status(pr_number)
+        
+        if not ci_passing:
+            failures.append({
+                "type": "CI_FAILURE",
+                "pr_number": pr_number,
+                "pr_title": pr.get("title", "Unknown"),
+                "pr_link": pr.get("html_url", ""),
+                "status": ci_status,
+            })
+    
+    return failures
+
+
+def get_best_practice_flags(prs: List[Dict]) -> List[Dict]:
+    """Get best practice advisory flags from Trae review artifacts.
+    
+    Parses BEST_PRACTICE_ALIGNMENT fields from Trae review artifacts.
+    Returns list of flags with recommendations (non-blocking).
+    """
+    flags = []
+    
+    for pr in prs:
+        pr_number = pr.get("number")
+        trae_artifact = get_trae_artifact(pr_number)
+        
+        if not trae_artifact:
+            continue
+        
+        # Parse the full artifact content for BEST_PRACTICE_ALIGNMENT
+        artifact_path = trae_artifact.get("file_path")
+        if not artifact_path or not artifact_path.exists():
+            continue
+        
+        try:
+            with open(artifact_path) as f:
+                content = f.read()
+            
+            # Check for BEST_PRACTICE_ALIGNMENT section
+            if "BEST_PRACTICE_ALIGNMENT" not in content:
+                continue
+            
+            # Extract values
+            plan_quality = None
+            change_size = None
+            ownership_clear = None
+            
+            plan_quality_match = re.search(r'PLAN_QUALITY:\s*(PASS|CONCERN)', content, re.IGNORECASE)
+            change_size_match = re.search(r'CHANGE_SIZE:\s*(OK|TOO_LARGE)', content, re.IGNORECASE)
+            ownership_clear_match = re.search(r'OWNERSHIP_CLEAR:\s*(YES|NO)', content, re.IGNORECASE)
+            
+            if plan_quality_match:
+                plan_quality = plan_quality_match.group(1)
+            if change_size_match:
+                change_size = change_size_match.group(1)
+            if ownership_clear_match:
+                ownership_clear = ownership_clear_match.group(1)
+            
+            # Generate recommendations based on flags
+            recommendations = []
+            if plan_quality == "CONCERN":
+                recommendations.append("Consider improving PLAN completeness")
+            if change_size == "TOO_LARGE":
+                recommendations.append("Consider splitting into smaller PRs")
+            if ownership_clear == "NO":
+                recommendations.append("Clarify ownership before merge")
+            
+            # Only add if there are any flags
+            if plan_quality or change_size or ownership_clear:
+                flags.append({
+                    "pr_number": pr_number,
+                    "pr_title": pr.get("title", "Unknown"),
+                    "pr_link": pr.get("html_url", ""),
+                    "plan_quality": plan_quality,
+                    "change_size": change_size,
+                    "ownership_clear": ownership_clear,
+                    "recommendation": "; ".join(recommendations) if recommendations else None,
+                })
+        
+        except Exception as e:
+            log(f"Error parsing best practice alignment for PR #{pr_number}: {e}", "ERROR")
+    
+    return flags
+
+
 def generate_daily_brief(prs: List[Dict], issues: List[Dict], project_items: List[Dict], date_str: str) -> str:
     """Generate daily brief markdown."""
     brief = []
@@ -350,6 +638,80 @@ def generate_daily_brief(prs: List[Dict], issues: List[Dict], project_items: Lis
     brief.append(f"- **In Review**: {len(in_review)}")
     brief.append("")
 
+    brief.append("---")
+    brief.append("")
+
+    # Governance failures section
+    brief.append("## Governance Failures Summary")
+    brief.append("")
+    governance_failures = get_governance_failures(prs)
+    
+    if governance_failures:
+        # PLAN structure failures
+        plan_failures = [f for f in governance_failures if f.get("type") == "PLAN_STRUCTURE"]
+        if plan_failures:
+            brief.append("### PLAN Structure Violations")
+            brief.append("")
+            for failure in plan_failures:
+                brief.append(f"**PR #{failure['pr_number']}**: {failure['pr_title']}")
+                brief.append(f"- **Link**: {failure['pr_link']}")
+                brief.append(f"- **Missing Fields**: {', '.join(failure['missing_fields'])}")
+                brief.append(f"- **Risk Tier**: {failure.get('risk_tier', 'Unknown')}")
+                brief.append(f"- **Action**: Add required PLAN fields before merge")
+                brief.append("")
+        
+        # Trae review failures
+        trae_failures = [f for f in governance_failures if f.get("type") == "TRAE_REVIEW"]
+        if trae_failures:
+            brief.append("### Trae Review Failures")
+            brief.append("")
+            for failure in trae_failures:
+                brief.append(f"**PR #{failure['pr_number']}**: {failure['pr_title']}")
+                brief.append(f"- **Link**: {failure['pr_link']}")
+                brief.append(f"- **Status**: {failure.get('status', 'Missing')}")
+                if failure.get('reason'):
+                    brief.append(f"- **Reason**: {failure['reason']}")
+                brief.append(f"- **Action**: {failure.get('action', 'Get Trae review')}")
+                brief.append("")
+        
+        # CI failures affecting governance
+        ci_failures = [f for f in governance_failures if f.get("type") == "CI_FAILURE"]
+        if ci_failures:
+            brief.append("### CI Failures (Governance Impact)")
+            brief.append("")
+            for failure in ci_failures:
+                brief.append(f"**PR #{failure['pr_number']}**: {failure['pr_title']}")
+                brief.append(f"- **Link**: {failure['pr_link']}")
+                brief.append(f"- **Status**: {failure.get('status')}")
+                brief.append("")
+    else:
+        brief.append("✅ No governance failures detected.")
+    brief.append("")
+    brief.append("---")
+    brief.append("")
+
+    brief.append("## Best Practices Advisory (Soft Risk)")
+    brief.append("")
+    best_practice_flags = get_best_practice_flags(prs)
+    
+    if best_practice_flags:
+        for flag in best_practice_flags:
+            brief.append(f"### PR #{flag['pr_number']}: {flag['pr_title']}")
+            brief.append(f"- **Link**: {flag['pr_link']}")
+            
+            if flag.get('plan_quality'):
+                brief.append(f"- **PLAN Quality**: {flag['plan_quality']}")
+            if flag.get('change_size'):
+                brief.append(f"- **Change Size**: {flag['change_size']}")
+            if flag.get('ownership_clear'):
+                brief.append(f"- **Ownership Clear**: {flag['ownership_clear']}")
+            
+            if flag.get('recommendation'):
+                brief.append(f"- **Recommendation**: {flag['recommendation']}")
+            brief.append("")
+    else:
+        brief.append("No best practice flags raised.")
+    brief.append("")
     brief.append("---")
     brief.append("")
 

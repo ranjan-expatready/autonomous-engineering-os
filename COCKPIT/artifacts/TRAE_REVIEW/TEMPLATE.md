@@ -26,6 +26,12 @@ pr_url: "https://github.com/owner/repo/pull/{pr-number}"
 verdict: "APPROVE" | "REJECT" | "REQUEST_CHANGES"
 signature: "trae-external-reviewer"
 
+# VISION ALIGNMENT CHECK (MANDATORY)
+vision_alignment: "YES" | "NO" | "CONCERNS"
+vision_concerns:
+  - "Concern 1 or empty list"
+  - "Concern 2 or empty list"
+
 # REVIEW SCOPE
 review_scope:
   - "List of files/directories reviewed by Trae"
@@ -42,6 +48,7 @@ policy_violations:
 recommendations: |
   Trae's recommendations and feedback.
   Include guidance for fixes if requested changes.
+  Include Vision alignment assessment.
 
 # METADATA
 review_timestamp: "YYYY-MM-DD HH:MM UTC"
@@ -51,6 +58,14 @@ expiry_days: 7
 links:
   github_pr: "https://github.com/owner/repo/pull/{pr-number}"
   artifact_file: "COCKPIT/artifacts/TRAE_REVIEW/TRAE-{timestamp}-{pr-number}.yml"
+  vision_document: "FOUNDATION/01_VISION.md"
+
+# BEST-PRACTICE ALIGNMENT (Non-Blocking Advisory)
+# These fields are advisory only and never block merge
+BEST_PRACTICE_ALIGNMENT:
+  PLAN_QUALITY: PASS | CONCERN
+  CHANGE_SIZE: OK | TOO_LARGE
+  OWNERSHIP_CLEAR: YES | NO
 ```
 
 ---
@@ -69,6 +84,9 @@ pr_url: "https://github.com/owner/repo/pull/42"
 verdict: "APPROVE"
 signature: "trae-external-reviewer"
 
+vision_alignment: "YES"
+vision_concerns: []
+
 review_scope:
   - "GOVERNANCE/GUARDRAILS.md"
   - "scripts/governance_validator.py"
@@ -76,7 +94,9 @@ review_scope:
 security_findings: []
 policy_violations: []
 
-recommendations: "No security or policy issues found. Trae review: APPROVE - Change is compliant with governance policies and safe to merge."
+recommendations: |
+  No security or policy issues found. Trae review: APPROVE - Change is compliant with governance policies and safe to merge.
+  Vision Alignment: YES - Change aligns with Company Constitution (FOUNDATION/01_VISION.md).
 
 review_timestamp: "2026-01-25 10:30 UTC"
 expiry_days: 7
@@ -84,6 +104,7 @@ expiry_days: 7
 links:
   github_pr: "https://github.com/owner/repo/pull/42"
   artifact_file: "COCKPIT/artifacts/TRAE_REVIEW/TRAE-20260125-042.yml"
+  vision_document: "FOUNDATION/01_VISION.md"
 ```
 
 ---
@@ -102,6 +123,11 @@ pr_url: "https://github.com/owner/repo/pull/43"
 verdict: "REJECT"
 signature: "trae-external-reviewer"
 
+vision_alignment: "NO"
+vision_concerns:
+  - "Change bypasses Trae review by disabling external validator"
+  - "Violates 'Nothing bypasses review' principle in Company Constitution"
+
 review_scope:
   - "APP/auth.py"
 
@@ -112,10 +138,11 @@ security_findings:
 policy_violations: []
 
 recommendations: |
-  CRITICAL: Fix security issues before merging:
+  CRITICAL: Fix issues before merging:
   1. Remove hardcoded password, use environment variables or secrets manager
   2. Use parameterized queries to prevent SQL injection
-  3. Re-request Trae review after fixes
+  3. Restore Trae review validator (disabled in this PR)
+  4. Re-request Trae review after fixes
 
 review_timestamp: "2026-01-25 11:00 UTC"
 expiry_days: 7
@@ -123,6 +150,7 @@ expiry_days: 7
 links:
   github_pr: "https://github.com/owner/repo/pull/43"
   artifact_file: "COCKPIT/artifacts/TRAE_REVIEW/TRAE-20260125-043.yml"
+  vision_document: "FOUNDATION/01_VISION.md"
 ```
 
 ---
@@ -141,6 +169,10 @@ pr_url: "https://github.com/owner/repo/pull/44"
 verdict: "REQUEST_CHANGES"
 signature: "trae-external-reviewer"
 
+vision_alignment: "CONCERNS"
+vision_concerns:
+  - "Cost threshold increase from $100 to $500 without documented business case may violate efficiency principle"
+
 review_scope:
   - "GOVERNANCE/COST_POLICY.md"
   - "scripts/monitoring.py"
@@ -154,6 +186,7 @@ recommendations: |
   1. Add justification for cost threshold change in PR description or separate documentation
   2. Consider if threshold change is necessary for business needs
   3. Re-request Trae review after addressing
+  Vision Alignment: CONCERNS - Cost increase without justification may violate efficiency principle (see vision_concerns).
 
 review_timestamp: "2026-01-25 11:30 UTC"
 expiry_days: 7
@@ -161,6 +194,7 @@ expiry_days: 7
 links:
   github_pr: "https://github.com/owner/repo/pull/44"
   artifact_file: "COCKPIT/artifacts/TRAE_REVIEW/TRAE-20260125-044.yml"
+  vision_document: "FOUNDATION/01_VISION.md"
 ```
 
 ---

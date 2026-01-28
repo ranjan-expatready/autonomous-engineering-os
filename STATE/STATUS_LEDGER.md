@@ -316,6 +316,7 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
 
 | Date | Milestone | Artifact | Success |
 |------|-----------|----------|---------|
+| 2026-01-28 | Best Practices Closure Loop | FRAMEWORK/BEST_PRACTICES.md, FRAMEWORK/HANDOFF_RULES.md, PLAN validation, enhanced Daily Brief | ✅ |
 | 2026-01-25 | SDLC Board Automation Rules Documented | SDLC_AUTOMATION_VERIFICATION.md | ✅ |
 | 2026-01-25 | GitHub Projects Board Created | https://github.com/users/ranjan-expatready/projects/2 | ✅ |
 | 2026-01-25 | Framework SSOT Reconciled | FRAMEWORK/PROGRESS.md, FRAMEWORK/EVIDENCE_INDEX.md, FRAMEWORK/MISSING_ITEMS.md | ✅ |
@@ -358,6 +359,8 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
 
 | Timestamp | Updated By | What Changed | Files Modified |
 |-----------|------------|--------------|----------------|
+| 2026-01-28 | CTO Agent | ✅ Best Practices Closure Loop implemented: FRAMEWORK/BEST_PRACTICES.md, FRAMEWORK/HANDOFF_RULES.md created; PLAN structure enforcement added to governance_validator.py; unit tests created; Daily Brief enhanced with governance failures and best practices advisory sections | Created tests/test_governance_plan_structure.py, FRAMEWORK/BEST_PRACTICES.md, FRAMEWORK/HANDOFF_RULES.md; Modified scripts/governance_validator.py, scripts/generate_daily_brief.py, .github/workflows/ci.yml |
+| 2026-01-26 | CTO Agent | ✅ Company Constitution established: FOUNDATION/01_VISION.md (v1.0, CANONICAL), FOUNDATION/README.md created; FRAMEWORK/EVIDENCE_INDEX.md updated with VISION section; All agents now bound to Vision before planning/execution | Created FOUNDATION/01_VISION.md, FOUNDATION/README.md; Updated FRAMEWORK/EVIDENCE_INDEX.md, STATE/STATUS_LEDGER.md |
 | 2026-01-25 20:00 | CTO Agent | ✅ SDLC simulation completed successfully: Issue #17 created → PR #18 created → Machine Board validation passed → PR merged → Framework approved for real product development | Issue #17 closed, PR #18 merged, APP/ application code, COCKPIT artifacts (PLAN, ROLLBACK), STATE/STATUS_LEDGER.md, FRAMEWORK updated, all evidence collected |
 | 2026-01-25 19:00 | CTO Agent | SDLC simulation in progress: Issue #17 created, PLAN artifact created, APP directory populated with FastAPI /health endpoint, PR #18 created, Machine Board validation failed (needs rollback plan artifact) | Created Issue #17, PLAN artifact, APP/* files, PR #18; Updated STATUS_LEDGER.md with current simulation state |
 | 2026-01-25 | Ops Droid | SDLC Board automation rules documented and configuration protocol created | Created SDLC_AUTOMATION_VERIFICATION.md, updated FRAMEWORK/PROGRESS.md, FRAMEWORK/EVIDENCE_INDEX.md, FRAMEWORK/MISSING_ITEMS.md |
@@ -376,9 +379,10 @@ This ledger provides a human-readable snapshot of the Autonomous Engineering OS'
 
 ### Framework Status
 
-**Framework**: ✅ INITIALIZED - SSOT RECONCILED
+**Framework**: ✅ INITIALIZED - COMPANY CONSTITUTION ESTABLISHED
 
 The Autonomous Engineering OS framework is now complete and stable with:
+- ✓ Company Constitution (FOUNDATION/01_VISION.md - v1.0, CANONICAL)
 - ✓ Governance (PR-only, Machine Board governance stable)
 - ✓ Trae External Reviewer (mandatory external security/policy reviewer for T1-T4)
 - ✓ Quality Gates (Staged coverage policy)
@@ -393,14 +397,40 @@ The Autonomous Engineering OS framework is now complete and stable with:
 **Governance Enforcement**: Active via .github/workflows/machine-board.yml ✅
 **Machine Board Status**: Operational (PR #10 merged, Actions #21327980330 PASS) ✅
 **Trae Integration**: Complete (AGENTS/TRAE.md, trae-review-validator.yml, TRAE_REVIEW artifacts) ✅
+**Vision Binding**: All agents now bound to FOUNDATION/01_VISION.md before any action ✅
+**Company Constitution**: Established (v1.0, CANONICAL - all agents align to Vision) ✅
 **Blockers Cleared**: 5/5 (governance-validator.yml issues, branch protection, workflow conflicts) ✅
 
 **Next Phase**: Product definition in PRODUCT/ directory (SDLC Board automation rules documented and configuration protocol created)
 
 ---
 
+## Milestone: Company Constitution Established (2026-01-26)
+
+**Significance**: Autonomous Engineering OS now has a corporate constitution (FOUNDATION/01_VISION.md) that governs all operations.
+
+**What Was Created**:
+- FOUNDATION/01_VISION.md (v1.0, CANONICAL) - Company North Star
+- FOUNDATION/README.md - Constitution folder purpose and amendment process
+
+**What Was Updated**:
+- FRAMEWORK/EVIDENCE_INDEX.md - Added VISION section (highest priority requirement)
+- All agents now Vision-bound (see agent contracts)
+
+**Vision Binding**:
+- Antigravity must read VISION.md before generating any PLAN
+- Factory Droids must read VISION.md before executing any task
+- Trae must check Vision alignment for all reviews
+- Machine Board blocks PRs that contradict VISION.md
+
+**This is how you go from system → company.**
+
+---
+
 ## Version History
 
+- v1.7 (2026-01-28): Best Practices Closure Loop implemented (FRAMEWORK/BEST_PRACTICES.md, FRAMEWORK/HANDOFF_RULES.md, PLAN validation unit tests, enhanced Daily Brief)
+- v1.6 (2026-01-26): Company Constitution established (FOUNDATION/01_VISION.md, all agents Vision-bound)
 - v1.5 (2026-01-25): SDLC Board automation rules documented, configuration protocol created
 - v1.0 (2026-01-25): GitHub Projects Board created and operational
 - v1.0 (Initial): Status ledger structure created
@@ -409,8 +439,9 @@ The Autonomous Engineering OS framework is now complete and stable with:
 
 ---
 
-**Last Updated**: 2026-01-25 by Ops Droid
-**State Ledger Version**: v1.5
+**Last Updated**: 2026-01-28
+**State Ledger Version**: v1.7
 **Framework Status**: STABLE ✅
 **Governance Enforcement**: ACTIVE ✅
 **Machine Board**: OPERATIONAL ✅
+**Best Practices Closure Loop**: IMPLEMENTED ✅
