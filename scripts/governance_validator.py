@@ -698,7 +698,8 @@ class GovernanceValidator:
             # Look for heading patterns like "## Objective" or "**Objective:**"
             heading_patterns = [
                 rf"^#+\s+{re.escape(field.lower())}",  # ## Objective
-                rf"^\*\*?{re.escape(field.lower())}\*\*?:",  # **Objective:**
+                # Use ^\*{{1,2}} for 1-2 stars at start, \*{{0,2}} for 0-2 stars at end
+                r"^\*{1,2}" + re.escape(field.lower()) + r"\*{0,2}:",  # **Objective:** or *Objective:*
                 rf"^\s*-\s+{re.escape(field.lower())}",  # - Objective
             ]
             found = any(re.search(pattern, content_lower, re.MULTILINE) for pattern in heading_patterns)
