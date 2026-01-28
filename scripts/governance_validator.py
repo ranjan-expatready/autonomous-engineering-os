@@ -50,6 +50,15 @@ SECRET_PATTERNS = [
     r"BEGIN\s+PRIVATE\s+KEY",                # RSA private key marker
 ]
 
+# Required PLAN artifact fields
+REQUIRED_PLAN_FIELDS = [
+    "Objective",
+    "Non-Goals",
+    "Files",
+    "Risk Tier",
+    "Rollback",
+]
+
 # PR description artifact sections
 REQUIRED_ARTIFACT_SECTIONS = {
     "PLAN": ["scope", "risk tier", "cost estimate", "verification plan", "rollback plan"],
@@ -153,6 +162,7 @@ class GovernanceValidator:
         self._check_risk_tier_requirements()
         self._check_trae_review_for_protected_paths()
         self._check_framework_only_validations()
+        self._check_plan_structure()
 
         # Print results and exit
         self._print_results()
@@ -601,6 +611,114 @@ class GovernanceValidator:
             for name, ok in results:
                 status = "✅" if ok else "❌"
                 print(f"      {status} {name}")
+
+    def _check_plan_structure(self):
+        """Check if PLAN artifacts have required structural fields.
+        
+        Applies when:
+        - Risk Tier >= T1
+        - OR directories include protected paths (FOUNDATION, COCKPIT, etc.)
+        
+        Required fields: Objective, Non-Goals, Files, Risk Tier, Rollback
+        """
+        print("\n📋 Checking PLAN structure...")
+        
+        # Determine if this check applies
+        desc_lower = self.pr_description.lower()
+        
+        # Check risk tier
+        risk_tier = None
+        if "tier 1" in desc_lower or "t1" in desc_lower or "critical" in desc_lower:
+            risk_tier = "T1"
+        elif "tier 2" in desc_lower or "t2" in desc_lower or "high risk" in desc_lower:
+            risk_tier = "T2"
+        elif "tier 3" in desc_lower or "t3" in desc_lower:
+            risk_tier = "T3"
+        elif "tier 4" in desc_lower or "t4" in desc_lower:
+            risk_tier = "T4"
+        
+        # Check protected paths
+        protected_changed = [
+            f for f in self.changed_files 
+            if any(p in f.parts for p in PROTECTED_PATHS + ["FOUNDATION", "GOVERNANCE", "AGENTS"])
+        ]
+        
+        # Skip if T0 or lower and no protected paths
+        if not risk_tier and not protected_changed:
+            self.add_result("PLAN Structure", True, "Low risk, no protected paths - validation not required")
+            print(f"   ✅ Low risk change - PLAN structure validation not required")
+            return
+        
+        print(f"   PLAN validation required: risk_tier={risk_tier or 'detected'}, protected_paths={len(protected_changed) > 0}")
+        
+        # Check if there's a referenced PLAN artifact file
+        plan_artifacts = re.findall(r"\[PLAN:\s*([^\]]+)\]", self.pr_description, re.IGNORECASE)
+        if not plan_artifacts:
+            plan_artifacts = re.findall(r"plan.*artifact:\s*([^\s\n]+)", self.pr_description, re.IGNORECASE)
+        
+        # Also check for inline PLAN section in PR description
+        has_plan_section = re.search(r"##?\s*plan", desc_lower) is not None
+        
+        if not plan_artifacts and not has_plan_section:
+            self.add_result(
+                "PLAN Structure",
+                False,
+                "No PLAN artifact found - required for T1+ or protected paths"
+            )
+            print(f"   ❌ No PLAN artifact referenced or inline PLAN section found")
+            return
+        
+        # Get content to validate
+        content_to_check = ""
+        
+        if plan_artifacts:
+            # Try to read the first referenced PLAN artifact
+            plan_path = REPO_ROOT / plan_artifacts[0]
+            try:
+                content_to_check = plan_path.read_text()
+                print(f"   Checking PLAN artifact: {plan_artifacts[0]}")
+            except FileNotFoundError:
+                self.add_result(
+                    "PLAN Structure",
+                    False,
+                    f"Referenced PLAN artifact not found: {plan_artifacts[0]}"
+                )
+                print(f"   ❌ PLAN artifact not found: {plan_artifacts[0]}")
+                return
+        else:
+            # Use PR description as PLAN content
+            content_to_check = self.pr_description
+            print(f"   Checking inline PLAN section in PR description")
+        
+        # Check for required fields (case-insensitive heading match)
+        content_lower = content_to_check.lower()
+        missing_fields = []
+        
+        for field in REQUIRED_PLAN_FIELDS:
+            # Look for heading patterns like "## Objective" or "**Objective:**"
+            heading_patterns = [
+                rf"^#+\s+{re.escape(field.lower())}",  # ## Objective
+                rf"^\*\*?{re.escape(field.lower())}\*\*?:",  # **Objective:**
+                rf"^\s*-\s+{re.escape(field.lower())}",  # - Objective
+            ]
+            found = any(re.search(pattern, content_lower, re.MULTILINE) for pattern in heading_patterns)
+            if not found:
+                missing_fields.append(field)
+        
+        if missing_fields:
+            self.add_result(
+                "PLAN Structure",
+                False,
+                f"Missing required PLAN fields: {', '.join(missing_fields)}"
+            )
+            print(f"   ❌ Missing required fields: {', '.join(missing_fields)}")
+        else:
+            self.add_result(
+                "PLAN Structure",
+                True,
+                f"All required PLAN fields present ({len(REQUIRED_PLAN_FIELDS)} fields)"
+            )
+            print(f"   ✅ All required PLAN fields present")
 
     def _check_yaml_syntax(self, yaml_file: Path) -> bool:
         """Basic YAML syntax check without pyyaml dependency."""

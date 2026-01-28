@@ -59,22 +59,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python (if Python project)
+      - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      # NOTE: Install your test dependencies here
-      # - name: Install dependencies
-      #   run: |
-      #     pip install -r requirements.txt
-      #     pip install pytest pytest-cov coverage[toml]
+      # Install pytest for governance tests
+      - name: Install pytest
+        run: |
+          pip install pytest
 
-      # - name: Run unit tests with coverage
-      #   run: |
-      #     pytest tests/unit/ --cov=app --cov-report=xml --cov-report=term
-      #     # Coverage threshold: 70% (Stage 1) - see GOVERNANCE/QUALITY_GATES.md
-      #     coverage report --fail-under=70
+      - name: Run governance validator tests
+        run: |
+          # Run PLAN structure unit tests
+          python -m pytest tests/test_governance_plan_structure.py -v
 
       # Coverage Reporting Placeholder (see GOVERNANCE/QUALITY_GATES.md for Staged Coverage Policy)
       - name: Coverage Reporting Placeholder
@@ -96,11 +94,10 @@ jobs:
           echo "See GOVERNANCE/QUALITY_GATES.md for complete staged coverage policy"
           echo "=============================================="
 
-      # Placeholder for framework initialization
-      - name: Placeholder (No tests yet)
+      # Placeholder for APP tests
+      - name: Placeholder for APP unit tests
         run: |
-          echo "Framework initialization - no unit tests yet"
-          echo "When APP/ is populated, unit tests will run here"
+          echo "APP unit tests will run here when APP/ is populated"
 
       # - name: Upload coverage to Codecov (optional)
       #   uses: codecov/codecov-action@v3
