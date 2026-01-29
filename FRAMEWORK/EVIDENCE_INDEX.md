@@ -4,7 +4,7 @@
 
 Single source of truth mapping all framework work to concrete evidence: PRs, commits, Actions runs, file paths, and artifacts. Every framework requirement must have traceable evidence.
 
-**Last Updated**: 2026-01-25
+**Last Updated**: 2026-01-29
 
 ---
 
@@ -779,8 +779,95 @@ All framework components are complete with traceable evidence:
 
 ---
 
+### Test C: PLAN Structure Negative Test (Missing Rollback - Expected FAIL)
+
+**Objective**: Verify machine-board fails when PLAN header is missing required fields (Rollback)
+
+**PR**: #33
+**URL**: https://github.com/ranjan-expatready/autonomous-engineering-os/pull/33
+**Branch**: `test/plan-failure`
+**Status**: OPEN (test PR - not meant to merge)
+
+**Check Results**:
+| Check | Status | Expected | Result |
+|-------|--------|----------|--------|
+| PLAN Structure | ❌ FAILED | ❌ FAILED | ✅ WORKING |
+| machine-board (overall) | ❌ FAILED | ❌ FAILED | ✅ WORKING |
+
+**Evidence**:
+- File: `GOVERNANCE/_plan_failure_marker.md` with incomplete PLAN header (intentionally missing Rollback)
+- Trae Artifact: `COCKPIT/artifacts/TRAE_REVIEW/TRAE-20260129-33.yml`
+- Trae Verdict: APPROVE (but machine-board detects missing fields)
+
+**Test Content** (PLAN header intentionally missing Rollback):
+```markdown
+## Objective
+Test that machine-board fails when PLAN header is missing required fields
+## Non-Goals
+This is not a security test, just a structural validation test
+## Files
+- GOVERNANCE/_plan_failure_marker.md
+## Risk Tier
+T1
+```
+
+**Expected Failures**:
+- Missing: Rollback field
+- Machine-board should report: "Missing required fields: Rollback"
+
+**Outcome**: ✅ PASSED - Machine-board correctly detects missing PLAN fields
+
+---
+
+### Test D: PLAN Structure Positive Test (Complete PLAN - Expected PASS)
+
+**Objective**: Verify machine-board passes when PLAN header has all required fields
+
+**PR**: #34
+**URL**: https://github.com/ranjan-expatready/autonomous-engineering-os/pull/34
+**Branch**: `test/plan-pass`
+**Status**: OPEN (test PR - optionally mergeable)
+
+**Check Results**:
+| Check | Status | Expected | Result |
+|-------|--------|----------|--------|
+| PLAN Structure | ✅ PASS | ✅ PASS | ✅ WORKING |
+| machine-board (overall) | ✅ PASS | ✅ PASS | ✅ WORKING |
+
+**Evidence**:
+- File: `GOVERNANCE/_plan_pass_marker.md` with complete PLAN header (all 5 fields)
+- Trae Artifact: `COCKPIT/artifacts/TRAE_REVIEW/TRAE-20260129-34.yml`
+- Trae Verdict: APPROVE
+
+**Test Content** (Complete PLAN header with all fields):
+```markdown
+## Objective
+Test that machine-board passes when PLAN header has all required fields
+## Non-Goals
+This is not a security test, just a structural validation test
+## Files
+- GOVERNANCE/_plan_pass_marker.md
+## Risk Tier
+T1
+## Rollback
+Delete this test marker file and close PR without merge.
+```
+
+**Expected Results**:
+- All fields present: Objective, Non-Goals, Files, Risk Tier, Rollback
+- Machine-board should report: "All required PLAN fields present (5/5)"
+
+**Outcome**: ✅ PASSED - Machine-board correctly validates complete PLAN structure
+
+---
+
+**PLAN Enforcement Coverage**: PLAN structure validation operates across three states: No PLAN (fails with "No PLAN found"), Partial PLAN (fails with specific missing fields), and Complete PLAN (passes with all 5 fields). This closes the "skip PLAN" loophole for T1+ and protected path changes.
+
+---
+
 ## Version History
 
+- v1.4 (2026-01-29): PLAN Structure Tests C/D evidence added ✅
 - v1.3 (2026-01-25): Trae Enforcement Test B evidence added ✅
 - v1.2 (2026-01-25): Trae Enforcement Test A evidence added
 - v1.1 (2026-01-25): SDLC Board automation rules evidence added
@@ -790,7 +877,8 @@ All framework components are complete with traceable evidence:
 
 ---
 
-**Last Updated**: 2026-01-25 by Ops Droid
+**Last Updated**: 2026-01-29 by Ops Droid
+**PLAN Structure Validation**: TESTS COMPLETE ✅
 **Trae Enforcement Status**: VALIDATION COMPLETE ✅
 **Validate Trae Review Check**: ✅ OPERATIONAL
 **Framework**: STABLE ✅

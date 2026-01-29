@@ -659,16 +659,28 @@ class GovernanceValidator:
         # Also check for inline PLAN section in PR description
         has_plan_section = re.search(r"##?\s*plan", desc_lower) is not None
         
-        if not plan_artifacts and not has_plan_section:
-            self.add_result(
-                "PLAN Structure",
-                False,
-                "No PLAN artifact found - required for T1+ or protected paths"
-            )
-            print(f"   ❌ No PLAN artifact referenced or inline PLAN section found")
-            return
+        # Check if all required fields are present (even without ## plan header)
+        content_lower = desc_lower
+        all_fields_present = True
+        any_field_present = False
+        fields_found = []
+        for field in REQUIRED_PLAN_FIELDS:
+            heading_patterns = [
+                rf"(?:^|\n)#+\s+{re.escape(field.lower())}",  # ## Objective (start of line or after newline)
+                rf"(?:^|\n)\s*\*{1,2}" + re.escape(field.lower()) + r"\*{0,2}:\s*",  # **Objective:** or *Objective:*
+                rf"(?:^|\n)\s*-\s+{re.escape(field.lower())}",  # - Objective
+            ]
+            found = any(re.search(pattern, content_lower) for pattern in heading_patterns)
+            fields_found.append((field, found))
+            if not found:
+                all_fields_present = False
+            else:
+                any_field_present = True
         
-        # Get content to validate
+        has_fields_directly = all_fields_present
+        has_partial_plan = any_field_present  # At least one PLAN field found
+        
+        # Determine content source for validation
         content_to_check = ""
         
         if plan_artifacts:
@@ -685,10 +697,22 @@ class GovernanceValidator:
                 )
                 print(f"   ❌ PLAN artifact not found: {plan_artifacts[0]}")
                 return
-        else:
+        elif has_plan_section or has_fields_directly or has_partial_plan:
             # Use PR description as PLAN content
             content_to_check = self.pr_description
-            print(f"   Checking inline PLAN section in PR description")
+            if has_plan_section:
+                print(f"   Checking inline PLAN section in PR description")
+            else:
+                print(f"   Checking PLAN fields in PR description")
+        else:
+            # No PLAN found at all
+            self.add_result(
+                "PLAN Structure",
+                False,
+                "No PLAN artifact found - required for T1+ or protected paths"
+            )
+            print(f"   ❌ No PLAN artifact referenced or inline PLAN section found")
+            return
         
         # Check for required fields (case-insensitive heading match)
         content_lower = content_to_check.lower()
