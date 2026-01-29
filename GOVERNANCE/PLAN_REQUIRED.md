@@ -1,3 +1,28 @@
+# PLAN-Required Governance Definition (T1)
+
+## PLAN
+
+### Objective
+Formalize PLAN-required governance with required fields and validation tests to harden safe autonomy
+
+### Non-Goals
+This does not modify Trae review requirements or security enforcement - only PLAN structure validation
+
+### Files
+- GOVERNANCE/PLAN_REQUIRED.md (this document)
+- FRAMEWORK/EVIDENCE_INDEX.md (test evidence documentation)
+- COCKPIT/artifacts/TRAE_REVIEW/TRAE-20260129-35.yml
+
+### Risk Tier
+T1
+
+### Rollback
+- Revert commit e21bf70 if critical issues found
+- Remove test evidence entries from EVIDENCE_INDEX.md
+- Close PR without merge if validation fails
+
+---
+
 ## PLAN-Required Governance
 
 Version: v1.0
