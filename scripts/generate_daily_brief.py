@@ -218,6 +218,19 @@ def detect_risk_tier(pr: Dict, trae_artifact: Optional[Dict]) -> str:
     return "T3"  # Default
 
 
+def is_test_pr(pr: Dict) -> bool:
+    """Check if PR is a governance test PR (should be excluded from active work counts).
+    
+    Test PRs have labels like:
+    - governance-test
+    - do-not-merge
+    - test-only
+    """
+    labels = [label.get("name", "").lower() for label in pr.get("labels", [])]
+    test_labels = ["governance-test", "do-not-merge", "test-only", "test-pr"]
+    return any(l in labels for l in test_labels)
+
+
 def get_pr_files(pr_number: int) -> List[str]:
     """Get list of files changed in a PR."""
     endpoint = f"/repos/{REPO_OWNER}/{REPO_NAME}/pulls/{pr_number}/files?per_page=100"
@@ -614,6 +627,10 @@ def get_best_practice_flags(prs: List[Dict]) -> List[Dict]:
 
 def generate_daily_brief(prs: List[Dict], issues: List[Dict], project_items: List[Dict], date_str: str) -> str:
     """Generate daily brief markdown."""
+    # Filter out test PRs from active work counts (they have governance-test/do-not-merge labels)
+    active_prs = [pr for pr in prs if not is_test_pr(pr)]
+    test_pr_count = len(prs) - len(active_prs)
+    
     brief = []
     brief.append(f"# Daily Brief — {date_str}")
     brief.append("")
@@ -623,7 +640,10 @@ def generate_daily_brief(prs: List[Dict], issues: List[Dict], project_items: Lis
 
     brief.append("## Executive Summary")
     brief.append("")
-    brief.append(f"- **Open PRs**: {len(prs)}")
+    if test_pr_count > 0:
+        brief.append(f"- **Open PRs**: {len(active_prs)} (excluding {test_pr_count} test PRs)")
+    else:
+        brief.append(f"- **Open PRs**: {len(active_prs)}")
     brief.append(f"- **Open Issues**: {len(issues)}")
     brief.append(f"- **Project Items**: {len(project_items)}")
     brief.append("")

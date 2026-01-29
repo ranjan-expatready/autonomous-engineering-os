@@ -861,6 +861,10 @@ Delete this test marker file and close PR without merge.
 
 ---
 
+**PLAN Enforcement Coverage**: PLAN structure validation operates across three states: No PLAN (fails with "No PLAN found"), Partial PLAN (fails with specific missing fields), and Complete PLAN (passes with all 5 fields). This closes the "skip PLAN" loophole for T1+ and protected path changes.
+
+---
+
 ## Version History
 
 - v1.4 (2026-01-29): PLAN Structure Tests C/D evidence added ✅
