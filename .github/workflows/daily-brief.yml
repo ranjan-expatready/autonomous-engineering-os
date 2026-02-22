@@ -6,7 +6,6 @@ name: daily-brief
 
 permissions:
   contents: read
-  pull-requests: write
 
 on:
   workflow_dispatch:
@@ -30,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.DAILY_BRIEF_TOKEN || github.token }}
+          token: ${{ github.token }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -44,7 +43,7 @@ jobs:
       - name: Generate Daily Brief
         id: generate
         env:
-          GITHUB_TOKEN: ${{ secrets.DAILY_BRIEF_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
           GITHUB_PROJECT_NUMBER: '2'  # SDLC Project number
@@ -76,153 +75,22 @@ jobs:
             ${{ steps.generate.outputs.approvals_path }}
           retention-days: 30
 
-      - name: Create or Update PR
+      - name: Write brief to workflow summary
         if: github.event.inputs.dry_run != 'true'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const fs = require('fs');
-            const { execSync } = require('child_process');
-            const briefPath = '${{ steps.generate.outputs.brief_path }}';
-            const approvalsPath = '${{ steps.generate.outputs.approvals_path }}';
-
-            console.log('Brief path:', briefPath);
-            console.log('Approvals path:', approvalsPath);
-
-            // Read generated artifacts
-            const briefContent = fs.readFileSync(briefPath, 'utf8');
-            const approvalsContent = fs.readFileSync(approvalsPath, 'utf8');
-
-            // Get date string for branch naming
-            const dateStr = new Date().toISOString().slice(0,10).replace(/-/g, '');
-
-            // Check out or create daily-brief branch
-            const branchName = `daily-brief/${dateStr}`;
-
-            try {
-              // Try to fetch existing branch
-              execSync(`git fetch origin ${branchName} || true`);
-            } catch (e) {
-              console.log('Branch does not exist yet');
-            }
-
-            // Create branch (or reset it if exists)
-            try {
-              execSync(`git checkout -B ${branchName}`);
-            } catch (e) {
-              // Branch might already exist locally
-              execSync(`git checkout ${branchName}`);
-            }
-
-            // Ensure artifact directories exist
-            const briefDir = 'COCKPIT/artifacts/DAILY_BRIEF';
-            const approvalsDir = 'COCKPIT/artifacts/APPROVALS_QUEUE';
-            execSync(`mkdir -p ${briefDir} ${approvalsDir}`);
-
-            // Write artifacts
-            fs.writeFileSync(briefPath, briefContent);
-            fs.writeFileSync(approvalsPath, approvalsContent);
-
-            // Show changes
-            try {
-              execSync('git config user.name "github-actions[bot]"');
-              execSync('git config user.email "github-actions[bot]@users.noreply.github.com"');
-
-              // Check for changes
-              execSync('git add COCKPIT/artifacts/DAILY_BRIEF/ COCKPIT/artifacts/APPROVALS_QUEUE/');
-              const status = execSync('git status --porcelain', { encoding: 'utf-8' });
-
-              if (status.trim()) {
-                console.log('Changes detected:');
-                console.log(status);
-
-                // Commit changes
-                execSync('git commit -m "chore: update daily brief and approvals queue"');
-
-                // Push to remote
-                execSync(`git push -f origin ${branchName}`);
-                console.log(`Pushed branch: ${branchName}`);
-              } else {
-                console.log('No changes to commit');
-                return;
-              }
-            } catch (e) {
-              console.error('Error committing changes:', e.message);
-            }
-
-            // Create or update pull request
-            const prTitle = `chore: daily brief + approvals queue (${dateStr})`;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const mainBranch = 'main';
-
-            // Check if PR already exists
-            const { data: pulls } = await github.rest.pulls.list({
-              owner,
-              repo,
-              head: `${owner}:${branchName}`,
-              base: mainBranch,
-              state: 'open'
-            });
-
-            // Extract decision count from approvals content
-            const decisionMatch = approvalsContent.match(/Total Decisions Required: (\d+)/);
-            const decisionCount = decisionMatch ? parseInt(decisionMatch[1]) : 0;
-
-            const hasTraeNeeded = approvalsContent.includes('TRAE REVIEW REQUIRED');
-            const hasWaitingApproval = approvalsContent.includes('Founder Decisions Needed');
-
-            // Build PR description with links to artifacts
-            let prBody = `## Daily Brief + Approvals Queue — ${dateStr}\n\n`;
-            prBody += `**Generated**: ${new Date().toISOString()}\n\n`;
-            prBody += `### Artifact Links\n\n`;
-            prBody += `- **Daily Brief**: \`${briefPath}\`\n`;
-            prBody += `- **Approvals Queue**: \`${approvalsPath}\`\n\n`;
-            prBody += `### Summary\n\n`;
-            prBody += `- **Decisions Required**: ${decisionCount}\n`;
-            prBody += `- **Trae Review Needed**: ${hasTraeNeeded ? '✅ Yes' : '❌ No'}\n`;
-            prBody += `- **Waiting for Approval**: ${hasWaitingApproval ? '✅ Yes' : '❌ No'}\n\n`;
-            prBody += `### Review Instructions\n\n`;
-            if (decisionCount === 0) {
-              prBody += `✅ **No founder actions required** - System operating autonomously.\n\n`;
-            } else {
-              prBody += `1. Review the [Daily Brief](${briefPath}) for overview\n`;
-              prBody += `2. Review the [Approvals Queue](${approvalsPath}) for decision items\n`;
-              prBody += `3. Respond to each decision item by commenting on this PR\n`;
-              prBody += `4. Factory agents will automatically process your decisions\n\n`;
-            }
-            prBody += `---\n\n`;
-            prBody += `*This PR is auto-generated by the daily-brief workflow. Machine Board governs this artifact update.*`;
-
-            if (pulls.length > 0) {
-              // Update existing PR
-              const existingPr = pulls[0];
-              console.log(`Updating existing PR #${existingPr.number}`);
-
-              await github.rest.pulls.update({
-                owner,
-                repo,
-                pull_number: existingPr.number,
-                title: prTitle,
-                body: prBody,
-              });
-
-              console.log(`Updated PR #${existingPr.number}`);
-            } else {
-              // Create new PR
-              console.log(`Creating new PR`);
-
-              const { data: newPr } = await github.rest.pulls.create({
-                owner,
-                repo,
-                title: prTitle,
-                head: `${owner}:${branchName}`,
-                base: mainBranch,
-                body: prBody,
-              });
-
-              console.log(`Created PR #${newPr.number}: ${newPr.html_url}`);
-            }
+        run: |
+          echo "## Daily Brief Generated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "${{ steps.generate.outputs.brief_path }}" ]; then
+            echo "### Brief" >> $GITHUB_STEP_SUMMARY
+            head -50 "${{ steps.generate.outputs.brief_path }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "${{ steps.generate.outputs.approvals_path }}" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Approvals Queue" >> $GITHUB_STEP_SUMMARY
+            head -50 "${{ steps.generate.outputs.approvals_path }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Full artifacts available in the workflow run **Artifacts** tab." >> $GITHUB_STEP_SUMMARY
 
       - name: Report Summary
         if: always()
