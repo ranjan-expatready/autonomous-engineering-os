@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [ main ]
 
+# Permissions required for Gitleaks PR scanning
+permissions:
+  contents: read
+  pull-requests: read
+
 # Concurrency: Cancel in-progress runs for same branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
